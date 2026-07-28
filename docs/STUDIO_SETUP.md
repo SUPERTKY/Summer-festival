@@ -53,6 +53,8 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 [`REGISTER_CHOCOLATE_BANANA_MESHES.command.lua`](../studio/REGISTER_CHOCOLATE_BANANA_MESHES.command.lua)
 をコマンドバーで実行すると自動登録できます。
 
+名前で判定できないメッシュは、Explorerで「皮付きバナナ → 棒 → チョコ後 → 完成品」の順にCtrlを押しながら選択します。`SpecialMesh`を選択した場合は、その親Partが登録されます。
+
 `SkeweredBanana` を省略した場合は、登録した `Banana` と `Stick` から自動合成されます。`DippedBanana` と `FinishedBanana` は登録された実物メッシュが自動合成より優先されます。
 
 `FinishedBananaTool` は任意です。省略した場合は、登録した `FinishedBanana` メッシュを使って購入者用Toolが自動生成されます。完成品Toolを個別に用意する場合は `Tool` 内に `Handle` というBasePartを置きます。

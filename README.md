@@ -39,8 +39,8 @@ Roblox Studio で使う、チョコバナナの作成・販売システムです
 
 ### 用意済みメッシュを登録
 
-1. Explorerで4つを `Banana`、`Stick`、`DippedBanana`、`FinishedBanana` と分かる名前にします。
-2. 4つを同時に選択します。
+1. Explorerで「皮付きバナナ → 棒 → チョコ後 → 完成品」の順に、Ctrlを押しながら4つを選択します。
+2. 名前が `Banana`、`Stick`、`DippedBanana`、`FinishedBanana` と判別できる場合は、選択順は問いません。
 3. [`studio/REGISTER_CHOCOLATE_BANANA_MESHES.command.lua`](studio/REGISTER_CHOCOLATE_BANANA_MESHES.command.lua) の全体をコマンドバーへ貼り付けて実行します。
 
 皮付きバナナ、棒、チョコ後、完成品の実物メッシュが登録されます。串刺し状態は皮付きバナナと棒から自動合成し、購入後のToolにも完成品メッシュを使います。
