@@ -14,9 +14,7 @@
     },
     "StarterPlayer": {
       "StarterPlayerScripts": {
-        "ChocolateBananaClient": {
-          "$path": "src/StarterPlayer/StarterPlayerScripts"
-        }
+        "$path": "src/StarterPlayer/StarterPlayerScripts"
       }
     }
   }
