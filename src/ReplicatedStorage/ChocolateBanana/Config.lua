@@ -46,6 +46,7 @@ local Config = {
 
 	ItemOffsets = {
 		Banana = CFrame.new(0, -0.45, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		PeeledBanana = CFrame.new(0, -0.45, 0) * CFrame.Angles(0, 0, math.rad(90)),
 		Stick = CFrame.new(0, -0.55, 0) * CFrame.Angles(0, 0, 0),
 		SkeweredBanana = CFrame.new(0, -0.55, 0) * CFrame.Angles(0, 0, 0),
 		DippedBanana = CFrame.new(0, -0.55, 0) * CFrame.Angles(0, 0, 0),
