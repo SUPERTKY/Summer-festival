@@ -27,7 +27,7 @@ type DisplayState = {
 	prompt: ProximityPrompt,
 }
 
-local STEP_DISPLAY_ASSET = {
+local STEP_DISPLAY_ASSET: { [string]: string } = {
 	Empty = "Banana",
 	Banana = "Banana",
 	Ingredients = "Banana",
