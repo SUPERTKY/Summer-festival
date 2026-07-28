@@ -3,11 +3,12 @@
 -- 2) Explorer で「屋台 Model」と、今回用意した未コーティングの串バナナを選択します。
 --    串バナナの名前は SkeweredBanana にしてください。
 -- 3) FinishedBanana が ServerStorage/ChocolateBananaAssets にまだ無い場合だけ、
---    現在のチョコバナナも FinishedBanana という名前で一緒に選択します。
+--    現在の完成チョコバナナも FinishedBanana という名前で一緒に選択します。
 -- 4) このファイル全体を Command Bar へ貼り付けて実行します。
 --
+-- 実行後、板の左側が工程中バナナ、右側が販売中の完成品です。
 -- BOARD_OFFSET は屋台の Pivot から見た板の位置です。既存 DisplayPoint がある場合は、
--- その真下へ板を作るので BOARD_OFFSET は使いません。
+-- その販売位置を維持するように板を作るので BOARD_OFFSET は使いません。
 
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local CollectionService = game:GetService("CollectionService")
@@ -15,15 +16,16 @@ local Selection = game:GetService("Selection")
 local ServerStorage = game:GetService("ServerStorage")
 
 local BOARD_NAME = "ChocolateBananaDisplayBoard"
-local DISPLAY_POINT_NAME = "ChocolateBananaDisplayPoint"
-local DISPLAY_TAG = "ChocolateBananaDisplayPoint"
+local CURRENT_POINT_NAME = "ChocolateBananaCurrentStepDisplayPoint"
+local SALE_POINT_NAME = "ChocolateBananaDisplayPoint"
+local CURRENT_POINT_TAG = "ChocolateBananaCurrentStepDisplayPoint"
+local SALE_POINT_TAG = "ChocolateBananaDisplayPoint"
+
 local BOARD_SIZE = Vector3.new(7, 0.3, 2.2)
 local BOARD_OFFSET = CFrame.new(0, 3.7, -4)
-local SAMPLE_X = {
-	FinishedBanana = -2.15,
-	SkeweredBanana = 0,
-}
-local SALE_X = 2.15
+local CURRENT_X = -1.7
+local SALE_X = 1.7
+local ITEM_HEIGHT = 0.45
 
 local selected = Selection:Get()
 
@@ -90,7 +92,7 @@ end
 local selectedFinished = findSelectedAsset("FinishedBanana")
 local selectedSkewered = findSelectedAsset("SkeweredBanana")
 
--- FinishedBanana がすでに登録済みで、屋台以外に未判定の選択が1個だけなら、
+-- FinishedBanana が登録済みで、屋台以外に未判定の選択が1個だけなら、
 -- それを今回用意した SkeweredBanana として扱います。
 if not selectedSkewered and assets:FindFirstChild("FinishedBanana") then
 	local unknown = {}
@@ -139,19 +141,36 @@ local function installAsset(assetName, source)
 	return existing
 end
 
-ChangeHistoryService:SetWaypoint("Before chocolate banana display setup")
+local function findTaggedPoint(tag)
+	for _, instance in CollectionService:GetTagged(tag) do
+		if instance:IsA("BasePart") and isInside(instance, stall) then
+			return instance
+		end
+	end
+	return nil
+end
 
-local finishedAsset = installAsset("FinishedBanana", selectedFinished)
-local skeweredAsset = installAsset("SkeweredBanana", selectedSkewered)
-
-local oldDisplayPoint
-for _, instance in CollectionService:GetTagged(DISPLAY_TAG) do
-	if instance:IsA("BasePart") and isInside(instance, stall) then
-		oldDisplayPoint = instance
-		break
+local function configurePoint(point, name, tag, localX)
+	point.Name = name
+	point.Anchored = true
+	point.CanCollide = false
+	point.CanQuery = false
+	point.CanTouch = false
+	point.Transparency = 1
+	point.Size = Vector3.new(0.5, 0.5, 0.5)
+	point.CFrame = board.CFrame * CFrame.new(localX, BOARD_SIZE.Y / 2 + ITEM_HEIGHT, 0)
+	point.Parent = stall
+	if not CollectionService:HasTag(point, tag) then
+		CollectionService:AddTag(point, tag)
 	end
 end
 
+ChangeHistoryService:SetWaypoint("Before chocolate banana display setup")
+
+installAsset("FinishedBanana", selectedFinished)
+installAsset("SkeweredBanana", selectedSkewered)
+
+local oldSalePoint = findTaggedPoint(SALE_POINT_TAG)
 local board = stall:FindFirstChild(BOARD_NAME)
 if board and not board:IsA("BasePart") then
 	error(BOARD_NAME .. " は BasePart である必要があります。")
@@ -173,94 +192,37 @@ board.TopSurface = Enum.SurfaceType.Smooth
 board.BottomSurface = Enum.SurfaceType.Smooth
 
 if board:GetAttribute("ChocolateBananaConfigured") ~= true then
-	if oldDisplayPoint then
-		-- Keep the old sale position, but make it the right-hand slot on the new board.
-		board.CFrame = oldDisplayPoint.CFrame
-			* CFrame.new(-SALE_X, -(BOARD_SIZE.Y / 2 + 0.3), 0)
+	if oldSalePoint then
+		board.CFrame = oldSalePoint.CFrame
+			* CFrame.new(-SALE_X, -(BOARD_SIZE.Y / 2 + ITEM_HEIGHT), 0)
 	else
 		board.CFrame = stall:GetPivot() * BOARD_OFFSET
 	end
 end
 board:SetAttribute("ChocolateBananaConfigured", true)
 
-local displayPoint = oldDisplayPoint
-if not displayPoint then
-	displayPoint = Instance.new("Part")
-	displayPoint.Name = DISPLAY_POINT_NAME
-	displayPoint.Parent = stall
+local currentPoint = findTaggedPoint(CURRENT_POINT_TAG)
+if not currentPoint then
+	currentPoint = Instance.new("Part")
+end
+configurePoint(currentPoint, CURRENT_POINT_NAME, CURRENT_POINT_TAG, CURRENT_X)
+
+local salePoint = oldSalePoint
+if not salePoint then
+	salePoint = Instance.new("Part")
+end
+configurePoint(salePoint, SALE_POINT_NAME, SALE_POINT_TAG, SALE_X)
+
+-- 旧版コマンドで作った固定見本は削除します。
+-- 工程中の商品はサーバースクリプトが currentPoint に1つだけ表示します。
+local oldSamples = stall:FindFirstChild("ChocolateBananaDisplaySamples")
+if oldSamples then
+	oldSamples:Destroy()
 end
 
-displayPoint.Name = DISPLAY_POINT_NAME
-displayPoint.Anchored = true
-displayPoint.CanCollide = false
-displayPoint.CanQuery = false
-displayPoint.CanTouch = false
-displayPoint.Transparency = 1
-displayPoint.Size = Vector3.new(0.5, 0.5, 0.5)
-displayPoint.CFrame = board.CFrame * CFrame.new(SALE_X, BOARD_SIZE.Y / 2 + 0.3, 0)
-displayPoint.Parent = stall
-if not CollectionService:HasTag(displayPoint, DISPLAY_TAG) then
-	CollectionService:AddTag(displayPoint, DISPLAY_TAG)
-end
+Selection:Set({ board, currentPoint, salePoint })
+ChangeHistoryService:SetWaypoint("Create current-step chocolate banana display")
 
-local samples = stall:FindFirstChild("ChocolateBananaDisplaySamples")
-if not samples then
-	samples = Instance.new("Folder")
-	samples.Name = "ChocolateBananaDisplaySamples"
-	samples.Parent = stall
-end
-
-local function prepareSample(instance)
-	for _, descendant in instance:GetDescendants() do
-		if descendant:IsA("BasePart") then
-			descendant.Anchored = true
-			descendant.CanCollide = false
-			descendant.CanQuery = false
-			descendant.CanTouch = false
-		elseif descendant:IsA("ProximityPrompt") or descendant:IsA("Script") or descendant:IsA("LocalScript") then
-			descendant:Destroy()
-		end
-	end
-	if instance:IsA("BasePart") then
-		instance.Anchored = true
-		instance.CanCollide = false
-		instance.CanQuery = false
-		instance.CanTouch = false
-	end
-end
-
-local function getBounds(instance)
-	if instance:IsA("Model") then
-		return instance:GetBoundingBox()
-	end
-	return instance.CFrame, instance.Size
-end
-
-local function placeSample(asset, sampleName, x)
-	local old = samples:FindFirstChild(sampleName)
-	if old then
-		old:Destroy()
-	end
-
-	local sample = asset:Clone()
-	sample.Name = sampleName
-	sample.Parent = samples
-	prepareSample(sample)
-	ensurePrimaryPart(sample)
-
-	local boundsCF, boundsSize = getBounds(sample)
-	local pivot = sample:GetPivot()
-	local pivotToBounds = pivot:ToObjectSpace(boundsCF)
-	local wantedBounds = board.CFrame * CFrame.new(x, BOARD_SIZE.Y / 2 + boundsSize.Y / 2 + 0.04, 0)
-	sample:PivotTo(wantedBounds * pivotToBounds:Inverse())
-	return sample
-end
-
-placeSample(finishedAsset, "FinishedBananaSample", SAMPLE_X.FinishedBanana)
-placeSample(skeweredAsset, "SkeweredBananaSample", SAMPLE_X.SkeweredBanana)
-
-Selection:Set({ board, displayPoint })
-ChangeHistoryService:SetWaypoint("Create chocolate banana display board")
-
-print("完了: 展示板、完成品サンプル、未コーティング串バナナ、販売用 DisplayPoint を設定しました。")
-print("SkeweredBanana は作業工程の串刺し後メッシュとしても ServerStorage から使われます。")
+print("完了: 左側に工程展示位置、右側に販売位置を設定しました。")
+print("工程は Banana → SkeweredBanana → DippedBanana → FinishedBanana の順で自動更新されます。")
+print("購入ツールにも ServerStorage/ChocolateBananaAssets/FinishedBanana が使われます。")
