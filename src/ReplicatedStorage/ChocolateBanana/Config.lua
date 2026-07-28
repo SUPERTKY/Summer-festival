@@ -31,6 +31,7 @@ local Config = {
 		ChocolateVat = "ChocolateBananaChocolateVat",
 		ToppingContainer = "ChocolateBananaToppingContainer",
 		SellBlock = "ChocolateBananaSellBlock",
+		CurrentStepDisplayPoint = "ChocolateBananaCurrentStepDisplayPoint",
 		DisplayPoint = "ChocolateBananaDisplayPoint",
 	},
 
