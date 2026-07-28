@@ -15,6 +15,7 @@ type AssetFactory = typeof(setmetatable(
 
 local PLACEHOLDER_COLORS = {
 	Banana = Color3.fromRGB(255, 221, 48),
+	PeeledBanana = Color3.fromRGB(255, 239, 150),
 	Stick = Color3.fromRGB(139, 90, 43),
 	SkeweredBanana = Color3.fromRGB(255, 221, 48),
 	DippedBanana = Color3.fromRGB(91, 50, 30),
@@ -128,7 +129,9 @@ function AssetFactory:_placeholder(name: string): Model
 end
 
 function AssetFactory:_composite(name: string): Model?
-	local bananaTemplate = self._assetFolder:FindFirstChild("Banana")
+	-- 串付き以降は皮なしバナナを使います。古い場所ではBananaへフォールバックします。
+	local bananaTemplate = self._assetFolder:FindFirstChild("PeeledBanana")
+		or self._assetFolder:FindFirstChild("Banana")
 	local stickTemplate = self._assetFolder:FindFirstChild("Stick")
 	if not bananaTemplate or not stickTemplate then
 		return nil
