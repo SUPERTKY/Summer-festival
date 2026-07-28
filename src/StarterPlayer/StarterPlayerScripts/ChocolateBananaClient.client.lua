@@ -185,10 +185,10 @@ local currentStep = "None"
 local rotateDirection = 0
 local toastVersion = 0
 local cameraBound = false
-local cameraPitch = 0
 local savedCameraMode: Enum.CameraMode? = nil
 local savedCameraType: Enum.CameraType? = nil
 local savedMouseBehavior: Enum.MouseBehavior? = nil
+local savedMouseIconEnabled: boolean? = nil
 local hiddenParts: { [BasePart]: number } = {}
 
 local CAMERA_BIND_NAME = "ChocolateBananaFirstPersonCamera"
@@ -256,11 +256,16 @@ local function setFirstPersonEnabled(enabled: boolean)
 	if enabled and not cameraBound then
 		local camera = workspace.CurrentCamera
 		cameraBound = true
-		cameraPitch = 0
 		savedCameraMode = player.CameraMode
 		savedCameraType = if camera then camera.CameraType else Enum.CameraType.Custom
 		savedMouseBehavior = UserInputService.MouseBehavior
-		player.CameraMode = Enum.CameraMode.LockFirstPerson
+		savedMouseIconEnabled = UserInputService.MouseIconEnabled
+
+		-- Scriptable camera keeps the first-person position without Roblox's
+		-- LockFirstPerson cursor lock.
+		player.CameraMode = Enum.CameraMode.Classic
+		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+		UserInputService.MouseIconEnabled = true
 		if camera then
 			camera.CameraType = Enum.CameraType.Scriptable
 		end
@@ -288,11 +293,12 @@ local function setFirstPersonEnabled(enabled: boolean)
 			hideFirstPersonObstructions(character)
 			currentCamera.CameraType = Enum.CameraType.Scriptable
 			if UserInputService.MouseEnabled then
-				UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+				UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+				UserInputService.MouseIconEnabled = true
 			end
 
 			local eyePosition = head.Position + root.CFrame.UpVector * 0.12
-			currentCamera.CFrame = CFrame.new(eyePosition) * root.CFrame.Rotation * CFrame.Angles(cameraPitch, 0, 0)
+			currentCamera.CFrame = CFrame.new(eyePosition) * root.CFrame.Rotation
 			currentCamera.Focus = currentCamera.CFrame * CFrame.new(0, 0, -12)
 		end)
 	elseif not enabled and cameraBound then
@@ -303,6 +309,9 @@ local function setFirstPersonEnabled(enabled: boolean)
 		player.CameraMode = savedCameraMode or Enum.CameraMode.Classic
 		if savedMouseBehavior then
 			UserInputService.MouseBehavior = savedMouseBehavior
+		end
+		if savedMouseIconEnabled ~= nil then
+			UserInputService.MouseIconEnabled = savedMouseIconEnabled
 		end
 
 		local camera = workspace.CurrentCamera
@@ -318,6 +327,7 @@ local function setFirstPersonEnabled(enabled: boolean)
 		savedCameraMode = nil
 		savedCameraType = nil
 		savedMouseBehavior = nil
+		savedMouseIconEnabled = nil
 	end
 end
 
@@ -365,17 +375,6 @@ UserInputService.InputBegan:Connect(function(input, processed)
 		or input.KeyCode == Enum.KeyCode.E
 	then
 		rotateDirection = 1
-	end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-	if
-		isStaff
-		and cameraBound
-		and input.UserInputType == Enum.UserInputType.MouseMovement
-		and not UserInputService:GetFocusedTextBox()
-	then
-		cameraPitch = math.clamp(cameraPitch - input.Delta.Y * 0.0025, math.rad(-75), math.rad(75))
 	end
 end)
 
