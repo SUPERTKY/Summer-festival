@@ -190,6 +190,10 @@ end
 
 function AssetFactory:Clone(name: string): Instance
 	local template = self._assetFolder:FindFirstChild(name)
+	if not template and name == "PeeledBanana" then
+		-- 新アセット未登録の既存Studioでも調理を継続できる互換用フォールバックです。
+		template = self._assetFolder:FindFirstChild("Banana")
+	end
 	local composite = if not template
 			and (name == "SkeweredBanana" or name == "DippedBanana" or name == "FinishedBanana")
 		then self:_composite(name)
