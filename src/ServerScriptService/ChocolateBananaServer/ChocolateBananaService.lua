@@ -27,6 +27,15 @@ type DisplayState = {
 	prompt: ProximityPrompt,
 }
 
+local STEP_DISPLAY_ASSET = {
+	Empty = "Banana",
+	Banana = "Banana",
+	Ingredients = "Banana",
+	Skewered = "SkeweredBanana",
+	Dipped = "DippedBanana",
+	Finished = "FinishedBanana",
+}
+
 type ChocolateBananaService = typeof(setmetatable(
 	{} :: {
 		_config: any,
@@ -37,6 +46,7 @@ type ChocolateBananaService = typeof(setmetatable(
 		_stateByPlayer: { [Player]: StaffState },
 		_pendingJoin: { [Player]: { stallId: string, expiresAt: number } },
 		_displayByStall: { [string]: DisplayState },
+		_currentDisplayByStall: { [string]: Instance },
 		_touchTimes: { [Player]: number },
 		_bound: { [Instance]: boolean },
 	},
@@ -108,6 +118,7 @@ function ChocolateBananaService.new(config: any, moneyService: any, assets: any)
 		_stateByPlayer = {},
 		_pendingJoin = {},
 		_displayByStall = {},
+		_currentDisplayByStall = {},
 		_touchTimes = {},
 		_bound = {},
 	}, ChocolateBananaService)
@@ -128,6 +139,9 @@ end
 
 function ChocolateBananaService:_sendStatus(player: Player)
 	local state = self._stateByPlayer[player]
+	if state then
+		self:_syncCurrentDisplay(state)
+	end
 	self._remotes.StaffStatus:FireClient(player, {
 		isStaff = state ~= nil,
 		stallId = if state then state.stallId else nil,
@@ -146,6 +160,47 @@ function ChocolateBananaService:_findTaggedPart(tag: string, stallId: string): B
 		end
 	end
 	return nil
+end
+
+function ChocolateBananaService:_clearCurrentDisplay(stallId: string)
+	local existing = self._currentDisplayByStall[stallId]
+	if existing and existing.Parent then
+		existing:Destroy()
+	end
+	self._currentDisplayByStall[stallId] = nil
+end
+
+function ChocolateBananaService:_syncCurrentDisplay(state: StaffState)
+	local assetName = STEP_DISPLAY_ASSET[state.step]
+	local existing = self._currentDisplayByStall[state.stallId]
+	if
+		existing
+		and existing.Parent
+		and existing:GetAttribute("ChocolateBananaDisplayAsset") == assetName
+	then
+		return
+	end
+
+	self:_clearCurrentDisplay(state.stallId)
+	if not assetName then
+		return
+	end
+
+	local displayPoint = self:_findTaggedPart(self._config.Tags.CurrentStepDisplayPoint, state.stallId)
+	if not displayPoint then
+		warn(`CurrentStepDisplayPoint was not found for stall {state.stallId}`)
+		return
+	end
+
+	local item = self._assets:Place(assetName, displayPoint.CFrame, workspace)
+	if not item then
+		warn(`Could not display {assetName} for stall {state.stallId}`)
+		return
+	end
+
+	item.Name = `CB_CurrentStep_{assetName}`
+	item:SetAttribute("ChocolateBananaDisplayAsset", assetName)
+	self._currentDisplayByStall[state.stallId] = item
 end
 
 function ChocolateBananaService:_clearHeld(state: StaffState)
@@ -292,6 +347,7 @@ function ChocolateBananaService:_resign(player: Player, sendMessage: boolean)
 		humanoid.AutoRotate = state.originalMovement.autoRotate
 	end
 
+	self:_clearCurrentDisplay(state.stallId)
 	self._staffByStall[state.stallId] = nil
 	self._stateByPlayer[player] = nil
 	self._pendingJoin[player] = nil
