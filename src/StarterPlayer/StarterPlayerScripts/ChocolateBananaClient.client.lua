@@ -223,7 +223,17 @@ local function updatePanel()
 	end
 
 	stepLabel.Text = if isBusy then "作業中…" else (STEP_TEXT[currentStep] or "工程を確認中")
-	actionButton.Visible = currentStep == "Ingredients" and not isBusy
+
+	local canSkewer = currentStep == "Ingredients" and not isBusy
+	actionButton.Visible = true
+	actionButton.Active = canSkewer
+	actionButton.AutoButtonColor = canSkewer
+	actionButton.Text = if isBusy
+		then "調理中…"
+		elseif canSkewer then "バナナを刺す"
+		else "材料をそろえてください"
+	actionButton.BackgroundTransparency = if canSkewer then 0 else 0.45
+
 	rotateLeft.Active = not isBusy
 	rotateRight.Active = not isBusy
 	rotateLeft.BackgroundTransparency = if isBusy then 0.45 else 0
