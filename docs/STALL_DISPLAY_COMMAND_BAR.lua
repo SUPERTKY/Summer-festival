@@ -53,7 +53,10 @@ for _, instance in selected do
 end
 
 assert(stall, "StallId 属性を持つ屋台 Model を選択してください。")
-assert((stall:GetAttribute("StallId") or "") ~= "", "屋台 Model の StallId を空でない文字列にしてください。")
+assert(
+	(stall:GetAttribute("StallId") or "") ~= "",
+	"屋台 Model の StallId を空でない文字列にしてください。"
+)
 
 local assets = ServerStorage:FindFirstChild("ChocolateBananaAssets")
 if not assets then
@@ -136,7 +139,10 @@ local function installAsset(assetName, source)
 	end
 
 	assert(existing, assetName .. " がありません。Explorer で選択してから再実行してください。")
-	assert(existing:IsA("Model") or existing:IsA("BasePart"), assetName .. " は Model / MeshPart / BasePart にしてください。")
+	assert(
+		existing:IsA("Model") or existing:IsA("BasePart"),
+		assetName .. " は Model / MeshPart / BasePart にしてください。"
+	)
 	ensurePrimaryPart(existing)
 	return existing
 end
@@ -195,8 +201,7 @@ board.BottomSurface = Enum.SurfaceType.Smooth
 
 if board:GetAttribute("ChocolateBananaConfigured") ~= true then
 	if oldSalePoint then
-		board.CFrame = oldSalePoint.CFrame
-			* CFrame.new(-SALE_X, -(BOARD_SIZE.Y / 2 + ITEM_HEIGHT), 0)
+		board.CFrame = oldSalePoint.CFrame * CFrame.new(-SALE_X, -(BOARD_SIZE.Y / 2 + ITEM_HEIGHT), 0)
 	else
 		board.CFrame = stall:GetPivot() * BOARD_OFFSET
 	end
