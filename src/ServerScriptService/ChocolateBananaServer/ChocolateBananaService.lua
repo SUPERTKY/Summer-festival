@@ -173,11 +173,7 @@ end
 function ChocolateBananaService:_syncCurrentDisplay(state: StaffState)
 	local assetName = STEP_DISPLAY_ASSET[state.step]
 	local existing = self._currentDisplayByStall[state.stallId]
-	if
-		existing
-		and existing.Parent
-		and existing:GetAttribute("ChocolateBananaDisplayAsset") == assetName
-	then
+	if existing and existing.Parent and existing:GetAttribute("ChocolateBananaDisplayAsset") == assetName then
 		return
 	end
 
@@ -605,7 +601,10 @@ function ChocolateBananaService:_buy(player: Player, stallId: string)
 
 	local backpack = player:FindFirstChildOfClass("Backpack")
 	if not backpack then
-		self:_notify(player, "購入アイテムを受け取れませんでした。もう一度試してください。")
+		self:_notify(
+			player,
+			"購入アイテムを受け取れませんでした。もう一度試してください。"
+		)
 		return
 	end
 
