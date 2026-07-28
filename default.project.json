@@ -1,0 +1,24 @@
+{
+  "name": "SummerFestival",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "ChocolateBanana": {
+        "$path": "src/ReplicatedStorage/ChocolateBanana"
+      }
+    },
+    "ServerScriptService": {
+      "ChocolateBananaServer": {
+        "$path": "src/ServerScriptService/ChocolateBananaServer"
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "ChocolateBananaClient": {
+          "$path": "src/StarterPlayer/StarterPlayerScripts"
+        }
+      }
+    }
+  }
+}
+
