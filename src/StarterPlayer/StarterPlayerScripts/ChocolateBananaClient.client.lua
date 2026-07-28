@@ -236,6 +236,54 @@ local function updatePanel()
 	rotateRight.BackgroundTransparency = if isBusy then 0.45 else 0
 end
 
+local function setFirstPersonEnabled(enabled: boolean)
+	if enabled and not cameraBound then
+		cameraBound = true
+		savedCameraMode = player.CameraMode
+		player.CameraMode = Enum.CameraMode.LockFirstPerson
+
+		RunService:BindToRenderStep(CAMERA_BIND_NAME, Enum.RenderPriority.Camera.Value + 1, function()
+			if not isStaff then
+				return
+			end
+
+			local camera = workspace.CurrentCamera
+			local character = player.Character
+			local root = if character then character:FindFirstChild("HumanoidRootPart") else nil
+			local humanoid = if character then character:FindFirstChildOfClass("Humanoid") else nil
+			if not camera or not root or not root:IsA("BasePart") or not humanoid then
+				return
+			end
+
+			camera.CameraType = Enum.CameraType.Custom
+			camera.CameraSubject = humanoid
+
+			-- The default camera still supplies first-person positioning and mouse pitch.
+			-- Replacing only its yaw after the camera update makes every forced body
+			-- turn (manual rotation and work animations) visible immediately.
+			local pitch = math.asin(math.clamp(camera.CFrame.LookVector.Y, -1, 1))
+			camera.CFrame = CFrame.new(camera.CFrame.Position)
+				* root.CFrame.Rotation
+				* CFrame.Angles(pitch, 0, 0)
+		end)
+	elseif not enabled and cameraBound then
+		RunService:UnbindFromRenderStep(CAMERA_BIND_NAME)
+		cameraBound = false
+		player.CameraMode = savedCameraMode or Enum.CameraMode.Classic
+		savedCameraMode = nil
+
+		local camera = workspace.CurrentCamera
+		local character = player.Character
+		local humanoid = if character then character:FindFirstChildOfClass("Humanoid") else nil
+		if camera then
+			camera.CameraType = Enum.CameraType.Custom
+			if humanoid then
+				camera.CameraSubject = humanoid
+			end
+		end
+	end
+end
+
 local function setRotationFromButton(direction: number, inputState: Enum.UserInputState)
 	if inputState == Enum.UserInputState.Begin and isStaff and not isBusy then
 		rotateDirection = direction
@@ -395,6 +443,9 @@ staffStatus.OnClientEvent:Connect(function(payload)
 	isStaff = payload.isStaff == true
 	isBusy = payload.busy == true
 	currentStep = if type(payload.step) == "string" then payload.step else "None"
+	if isStaff ~= wasStaff then
+		setFirstPersonEnabled(isStaff)
+	end
 	if isBusy then
 		rotateDirection = 0
 	end
@@ -430,6 +481,10 @@ actionButton.Activated:Connect(function()
 	if currentStep == "Ingredients" and not isBusy then
 		actionRemote:FireServer("Skewer")
 	end
+end)
+
+script.Destroying:Connect(function()
+	setFirstPersonEnabled(false)
 end)
 
 task.spawn(bindMoney)

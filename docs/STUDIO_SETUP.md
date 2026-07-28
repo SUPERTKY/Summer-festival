@@ -42,7 +42,7 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 |---|---|
 | `Banana` | 左手で持つバナナ |
 | `Stick` | 右手で持つ棒 |
-| `SkeweredBanana` | 棒を刺した状態 |
+| `SkeweredBanana` | 棒を刺した未コーティング状態（今回用意したメッシュ） |
 | `DippedBanana` | チョコに漬けた状態 |
 | `FinishedBanana` | トッピング後・販売台の商品 |
 | `FinishedBananaTool` | 購入者へ渡すTool（任意） |
