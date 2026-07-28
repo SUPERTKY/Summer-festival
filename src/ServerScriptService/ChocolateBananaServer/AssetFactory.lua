@@ -48,6 +48,27 @@ local function setPartProperties(instance: Instance, anchored: boolean)
 	end
 end
 
+local function pivotInstance(instance: Instance, target: CFrame)
+	if instance:IsA("Model") then
+		instance:PivotTo(target)
+	elseif instance:IsA("BasePart") then
+		instance.CFrame = target
+	end
+end
+
+local function tintParts(instance: Instance, color: Color3)
+	if instance:IsA("BasePart") then
+		instance.Color = color
+		instance.Material = Enum.Material.SmoothPlastic
+	end
+	for _, descendant in instance:GetDescendants() do
+		if descendant:IsA("BasePart") then
+			descendant.Color = color
+			descendant.Material = Enum.Material.SmoothPlastic
+		end
+	end
+end
+
 local function weldModelToRoot(instance: Instance, root: BasePart)
 	for _, descendant in instance:GetDescendants() do
 		if descendant:IsA("BasePart") and descendant ~= root then
@@ -106,9 +127,71 @@ function AssetFactory:_placeholder(name: string): Model
 	return model
 end
 
+function AssetFactory:_composite(name: string): Model?
+	local bananaTemplate = self._assetFolder:FindFirstChild("Banana")
+	local stickTemplate = self._assetFolder:FindFirstChild("Stick")
+	if not bananaTemplate or not stickTemplate then
+		return nil
+	end
+
+	local model = Instance.new("Model")
+	model.Name = name
+
+	local root = Instance.new("Part")
+	root.Name = "Handle"
+	root.Size = Vector3.new(0.1, 0.1, 0.1)
+	root.Transparency = 1
+	root.CanCollide = false
+	root.CanQuery = false
+	root.Massless = true
+	root.Parent = model
+	model.PrimaryPart = root
+
+	local banana = bananaTemplate:Clone()
+	banana.Name = "BananaMesh"
+	banana.Parent = model
+	pivotInstance(banana, root.CFrame * self._config.CompositeOffsets.Banana)
+
+	local stick = stickTemplate:Clone()
+	stick.Name = "StickMesh"
+	stick.Parent = model
+	pivotInstance(stick, root.CFrame * self._config.CompositeOffsets.Stick)
+
+	if name == "DippedBanana" or name == "FinishedBanana" then
+		tintParts(banana, self._config.ChocolateColor)
+	end
+
+	if name == "FinishedBanana" then
+		local toppingColors = {
+			Color3.fromRGB(255, 92, 92),
+			Color3.fromRGB(255, 222, 72),
+			Color3.fromRGB(92, 190, 255),
+			Color3.fromRGB(255, 255, 255),
+		}
+		for index = 1, 8 do
+			local sprinkle = Instance.new("Part")
+			sprinkle.Name = "Topping"
+			sprinkle.Shape = Enum.PartType.Ball
+			sprinkle.Size = Vector3.new(0.1, 0.1, 0.1)
+			sprinkle.Color = toppingColors[((index - 1) % #toppingColors) + 1]
+			sprinkle.Material = Enum.Material.Neon
+			local angle = (index / 8) * math.pi * 2
+			sprinkle.CFrame = root.CFrame
+				* CFrame.new(math.cos(angle) * 0.28, 0.35 + ((index % 3) * 0.18), math.sin(angle) * 0.28)
+			sprinkle.Parent = model
+		end
+	end
+
+	return model
+end
+
 function AssetFactory:Clone(name: string): Instance
 	local template = self._assetFolder:FindFirstChild(name)
-	local clone = if template then template:Clone() else self:_placeholder(name)
+	local composite = if not template
+			and (name == "SkeweredBanana" or name == "DippedBanana" or name == "FinishedBanana")
+		then self:_composite(name)
+		else nil
+	local clone = if template then template:Clone() elseif composite then composite else self:_placeholder(name)
 	clone.Name = `CB_{name}`
 	return clone
 end

@@ -50,17 +50,13 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 
 `FinishedBanana` はトッピング後の手持ち、販売台の商品、購入者へ渡すToolの3か所で共通利用されます。購入時は完成品メッシュのPrimaryPartがToolの `Handle` になります。ほかの商品モデルを省略した場合は動作確認用の仮モデルが使われます。
 
-手に持つ角度は `Config.ItemOffsets` で調整できます。
+名前で判定できないメッシュは、Explorerで「皮付きバナナ → 棒 → チョコ後 → 完成品」の順にCtrlを押しながら選択します。`SpecialMesh`を選択した場合は、その親Partが登録されます。
 
-## 4. 展示板とメッシュをコマンドバーで設定
+`SkeweredBanana` を省略した場合は、登録した `Banana` と `Stick` から自動合成されます。`DippedBanana` と `FinishedBanana` は登録された実物メッシュが自動合成より優先されます。
 
-1. 屋台Modelへ空でない `StallId` 属性があることを確認します。
-2. 用意した未コーティングの串バナナを `SkeweredBanana` に改名します。
-3. Explorerで屋台Modelと `SkeweredBanana` を選択します。
-4. `FinishedBanana` が `ServerStorage/ChocolateBananaAssets` にまだ無い場合は、現在のチョコバナナを `FinishedBanana` に改名して一緒に選択します。
-5. [`STALL_DISPLAY_COMMAND_BAR.lua`](STALL_DISPLAY_COMMAND_BAR.lua) 全体をStudioの **View → Command Bar** へ貼り付けて実行します。
+`FinishedBananaTool` は任意です。省略した場合は、登録した `FinishedBanana` メッシュを使って購入者用Toolが自動生成されます。完成品Toolを個別に用意する場合は `Tool` 内に `Handle` というBasePartを置きます。
 
-スクリプトは次を設定します。
+手に持つ角度は `Config.ItemOffsets`、串刺し合成時の位置は `Config.CompositeOffsets` で調整できます。
 
 - 屋台上の木製展示板
 - 展示板左側の工程表示用 `CurrentStepDisplayPoint`
