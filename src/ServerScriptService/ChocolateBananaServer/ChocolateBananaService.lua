@@ -549,7 +549,10 @@ function ChocolateBananaService:_buy(player: Player, stallId: string)
 
 	local backpack = player:FindFirstChildOfClass("Backpack")
 	if not backpack then
-		self:_notify(player, "購入アイテムを受け取れませんでした。もう一度試してください。")
+		self:_notify(
+			player,
+			"購入アイテムを受け取れませんでした。もう一度試してください。"
+		)
 		return
 	end
 

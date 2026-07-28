@@ -1,5 +1,6 @@
 --!strict
 
+local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -184,10 +185,19 @@ local isBusy = false
 local currentStep = "None"
 local rotateDirection = 0
 local toastVersion = 0
-local cameraBound = false
-local savedCameraMode: Enum.CameraMode? = nil
+local cameraActionName = "ChocolateBananaRotate"
 
-local CAMERA_BIND_NAME = "ChocolateBananaFirstPersonCamera"
+type SavedCameraState = {
+	cameraType: Enum.CameraType,
+	cameraSubject: Instance?,
+	cameraMode: Enum.CameraMode,
+	minZoom: number,
+	maxZoom: number,
+	mouseBehavior: Enum.MouseBehavior,
+	mouseIconEnabled: boolean,
+}
+
+local savedCameraState: SavedCameraState? = nil
 
 local function bindMoney()
 	local leaderstats = player:WaitForChild("leaderstats")
@@ -284,6 +294,92 @@ local function setRotationFromButton(direction: number, inputState: Enum.UserInp
 	end
 end
 
+local function staffRotationAction(
+	_actionName: string,
+	inputState: Enum.UserInputState,
+	inputObject: InputObject
+): Enum.ContextActionResult
+	if not isStaff then
+		return Enum.ContextActionResult.Pass
+	end
+	if UserInputService:GetFocusedTextBox() then
+		rotateDirection = 0
+		return Enum.ContextActionResult.Pass
+	end
+
+	local direction = if inputObject.KeyCode == Enum.KeyCode.A then -1 else 1
+	setRotationFromButton(direction, inputState)
+	return Enum.ContextActionResult.Sink
+end
+
+local function startStaffCamera()
+	if savedCameraState then
+		return
+	end
+
+	local camera = workspace.CurrentCamera
+	if not camera then
+		return
+	end
+
+	savedCameraState = {
+		cameraType = camera.CameraType,
+		cameraSubject = camera.CameraSubject,
+		cameraMode = player.CameraMode,
+		minZoom = player.CameraMinZoomDistance,
+		maxZoom = player.CameraMaxZoomDistance,
+		mouseBehavior = UserInputService.MouseBehavior,
+		mouseIconEnabled = UserInputService.MouseIconEnabled,
+	}
+
+	player.CameraMode = Enum.CameraMode.LockFirstPerson
+	player.CameraMinZoomDistance = 0.5
+	player.CameraMaxZoomDistance = 0.5
+	camera.CameraType = Enum.CameraType.Scriptable
+	UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+	UserInputService.MouseIconEnabled = true
+
+	ContextActionService:BindActionAtPriority(
+		cameraActionName,
+		staffRotationAction,
+		false,
+		Enum.ContextActionPriority.High.Value + 100,
+		Enum.KeyCode.A,
+		Enum.KeyCode.D
+	)
+end
+
+local function stopStaffCamera()
+	ContextActionService:UnbindAction(cameraActionName)
+	rotateDirection = 0
+
+	local state = savedCameraState
+	savedCameraState = nil
+	if not state then
+		return
+	end
+
+	local camera = workspace.CurrentCamera
+	if camera then
+		camera.CameraType = state.cameraType
+		if state.cameraSubject and state.cameraSubject.Parent then
+			camera.CameraSubject = state.cameraSubject
+		else
+			local character = player.Character
+			local humanoid = if character then character:FindFirstChildOfClass("Humanoid") else nil
+			if humanoid then
+				camera.CameraSubject = humanoid
+			end
+		end
+	end
+
+	player.CameraMode = state.cameraMode
+	player.CameraMinZoomDistance = state.minZoom
+	player.CameraMaxZoomDistance = state.maxZoom
+	UserInputService.MouseBehavior = state.mouseBehavior
+	UserInputService.MouseIconEnabled = state.mouseIconEnabled
+end
+
 local function bindRotationButton(button: TextButton, direction: number)
 	button.InputBegan:Connect(function(input)
 		if
@@ -306,44 +402,32 @@ end
 bindRotationButton(rotateLeft, -1)
 bindRotationButton(rotateRight, 1)
 
-UserInputService.InputBegan:Connect(function(input, processed)
-	if processed or UserInputService:GetFocusedTextBox() or not isStaff or isBusy then
-		return
-	end
-	if input.KeyCode == Enum.KeyCode.A or input.KeyCode == Enum.KeyCode.Left or input.KeyCode == Enum.KeyCode.Q then
-		rotateDirection = -1
-	elseif
-		input.KeyCode == Enum.KeyCode.D
-		or input.KeyCode == Enum.KeyCode.Right
-		or input.KeyCode == Enum.KeyCode.E
-	then
-		rotateDirection = 1
-	end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-	if
-		input.KeyCode == Enum.KeyCode.A
-		or input.KeyCode == Enum.KeyCode.Left
-		or input.KeyCode == Enum.KeyCode.Q
-		or input.KeyCode == Enum.KeyCode.D
-		or input.KeyCode == Enum.KeyCode.Right
-		or input.KeyCode == Enum.KeyCode.E
-	then
-		rotateDirection = 0
-	end
-end)
-
-RunService.RenderStepped:Connect(function(deltaTime)
-	if not isStaff or isBusy or rotateDirection == 0 then
+RunService:BindToRenderStep("ChocolateBananaStaffCamera", Enum.RenderPriority.Camera.Value + 1, function(deltaTime)
+	if not isStaff then
 		return
 	end
 
 	local character = player.Character
 	local root = if character then character:FindFirstChild("HumanoidRootPart") else nil
-	if root and root:IsA("BasePart") then
+	local head = if character then character:FindFirstChild("Head") else nil
+	if not root or not root:IsA("BasePart") then
+		return
+	end
+
+	if not isBusy and rotateDirection ~= 0 then
 		local radians = math.rad(Config.RotationSpeedDegrees * deltaTime * rotateDirection)
 		root.CFrame *= CFrame.Angles(0, radians, 0)
+	end
+
+	local camera = workspace.CurrentCamera
+	if camera and head and head:IsA("BasePart") then
+		camera.CameraType = Enum.CameraType.Scriptable
+		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+		UserInputService.MouseIconEnabled = true
+		local eyePosition = head.Position + root.CFrame.LookVector * 0.45
+		local target = eyePosition + root.CFrame.LookVector * 20
+		camera.CFrame = CFrame.lookAt(eyePosition, target, root.CFrame.UpVector)
+		camera.Focus = CFrame.new(target)
 	end
 end)
 
@@ -364,6 +448,11 @@ staffStatus.OnClientEvent:Connect(function(payload)
 	end
 	if isBusy then
 		rotateDirection = 0
+	end
+	if isStaff and not wasStaff then
+		startStaffCamera()
+	elseif wasStaff and not isStaff then
+		stopStaffCamera()
 	end
 	updatePanel()
 end)

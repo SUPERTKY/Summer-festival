@@ -50,6 +50,15 @@ local Config = {
 		DippedBanana = CFrame.new(0, -0.55, 0) * CFrame.Angles(0, 0, 0),
 		FinishedBanana = CFrame.new(0, -0.55, 0) * CFrame.Angles(0, 0, 0),
 	},
+
+	-- BananaとStickだけが登録されている場合に、後工程のモデルを合成する位置です。
+	-- メッシュの向きに合わせてStudio上で微調整してください。
+	CompositeOffsets = {
+		Banana = CFrame.new(0, 0.35, 0),
+		Stick = CFrame.new(0, -0.9, 0),
+	},
+
+	ChocolateColor = Color3.fromRGB(91, 50, 30),
 }
 
 return table.freeze(Config)
