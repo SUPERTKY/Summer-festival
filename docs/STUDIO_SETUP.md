@@ -49,11 +49,21 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 
 各Modelは `PrimaryPart` を設定してください。未設定の場合は、最初に見つかったBasePartが使われます。手持ち状態では、モデル内のBasePartがPrimaryPartへ自動的に固定されます。
 
-`FinishedBananaTool` は `Tool` とし、内部に `Handle` というBasePartを用意します。省略した場合は簡易Toolが自動生成されます。ほかの商品モデルを省略した場合も、動作確認用の仮モデルが使われます。
+皮付きバナナ、棒、チョコ後、完成品の4つがある場合は、4つを選択して
+[`REGISTER_CHOCOLATE_BANANA_MESHES.command.lua`](../studio/REGISTER_CHOCOLATE_BANANA_MESHES.command.lua)
+をコマンドバーで実行すると自動登録できます。
 
-手に持つ角度は `Config.ItemOffsets` で調整できます。
+`SkeweredBanana` を省略した場合は、登録した `Banana` と `Stick` から自動合成されます。`DippedBanana` と `FinishedBanana` は登録された実物メッシュが自動合成より優先されます。
 
-## 4. アニメーション
+`FinishedBananaTool` は任意です。省略した場合は、登録した `FinishedBanana` メッシュを使って購入者用Toolが自動生成されます。完成品Toolを個別に用意する場合は `Tool` 内に `Handle` というBasePartを置きます。
+
+手に持つ角度は `Config.ItemOffsets`、串刺し合成時の位置は `Config.CompositeOffsets` で調整できます。
+
+## 4. スタッフカメラ
+
+スタッフになるとカメラは一人称になり、キャラクターの正面へ固定されます。マウス移動では視点が変わらず、PCでは `A` / `D` だけで左・右へ回転します。辞任すると、スタッフになる前のカメラ設定へ戻ります。
+
+## 5. アニメーション
 
 所有グループまたはゲーム所有者としてアニメーションを公開し、`Config.AnimationIds` に数値IDを設定します。
 
@@ -73,7 +83,7 @@ AnimationIds = {
 
 工程時間を変える場合は `Config.ActionDurations` も合わせて変更します。
 
-## 5. 所持金保存
+## 6. 所持金保存
 
 公開ゲームではDataStoreへ自動保存されます。Studioでも保存を試す場合：
 

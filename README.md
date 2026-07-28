@@ -37,6 +37,14 @@ Roblox Studio で使う、チョコバナナの作成・販売システムです
 
 実行するたびに `ChocolateBananaStall_01`、`ChocolateBananaStall_02` のように別の屋台が作られます。誤って作成した場合はStudioの「元に戻す」を使えます。
 
+### 用意済みメッシュを登録
+
+1. Explorerで4つを `Banana`、`Stick`、`DippedBanana`、`FinishedBanana` と分かる名前にします。
+2. 4つを同時に選択します。
+3. [`studio/REGISTER_CHOCOLATE_BANANA_MESHES.command.lua`](studio/REGISTER_CHOCOLATE_BANANA_MESHES.command.lua) の全体をコマンドバーへ貼り付けて実行します。
+
+皮付きバナナ、棒、チョコ後、完成品の実物メッシュが登録されます。串刺し状態は皮付きバナナと棒から自動合成し、購入後のToolにも完成品メッシュを使います。
+
 アニメーション未設定でも工程は進みます。公開済みアニメーションのIDを
 [`Config.lua`](src/ReplicatedStorage/ChocolateBanana/Config.lua) に入れると再生されます。
 
@@ -54,7 +62,8 @@ Roblox Studio で使う、チョコバナナの作成・販売システムです
 
 ## 操作
 
-- PC：`A` / `D`、`←` / `→`、`Q` / `E` で回転
+- スタッフ中：一人称カメラをキャラクターの前方へ固定
+- PC：`A` / `D` で左・右へ回転
 - スマートフォン：スタッフUIの「左回転」「右回転」を長押し
 - 各材料・設備：自動生成される ProximityPrompt を使用
 - 棒とバナナを持った後：画面の「バナナを刺す」
