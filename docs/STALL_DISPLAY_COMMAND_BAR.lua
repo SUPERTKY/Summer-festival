@@ -172,10 +172,14 @@ board.Material = Enum.Material.WoodPlanks
 board.TopSurface = Enum.SurfaceType.Smooth
 board.BottomSurface = Enum.SurfaceType.Smooth
 
-if oldDisplayPoint then
-	board.CFrame = oldDisplayPoint.CFrame * CFrame.new(0, -(BOARD_SIZE.Y / 2 + 0.12), 0)
-elseif board:GetAttribute("ChocolateBananaConfigured") ~= true then
-	board.CFrame = stall:GetPivot() * BOARD_OFFSET
+if board:GetAttribute("ChocolateBananaConfigured") ~= true then
+	if oldDisplayPoint then
+		-- Keep the old sale position, but make it the right-hand slot on the new board.
+		board.CFrame = oldDisplayPoint.CFrame
+			* CFrame.new(-SALE_X, -(BOARD_SIZE.Y / 2 + 0.3), 0)
+	else
+		board.CFrame = stall:GetPivot() * BOARD_OFFSET
+	end
 end
 board:SetAttribute("ChocolateBananaConfigured", true)
 
