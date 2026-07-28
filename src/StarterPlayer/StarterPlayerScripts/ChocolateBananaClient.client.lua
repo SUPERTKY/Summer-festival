@@ -185,17 +185,12 @@ local isBusy = false
 local currentStep = "None"
 local rotateDirection = 0
 local toastVersion = 0
-local cameraActionName = "ChocolateBananaRotate"
-
-type SavedCameraState = {
-	cameraType: Enum.CameraType,
-	cameraSubject: Instance?,
-	cameraMode: Enum.CameraMode,
-	minZoom: number,
-	maxZoom: number,
-	mouseBehavior: Enum.MouseBehavior,
-	mouseIconEnabled: boolean,
-}
+local cameraBound = false
+local cameraPitch = 0
+local savedCameraMode: Enum.CameraMode? = nil
+local savedCameraType: Enum.CameraType? = nil
+local savedMouseBehavior: Enum.MouseBehavior? = nil
+local hiddenParts: { [BasePart]: number } = {}
 
 local savedCameraState: SavedCameraState? = nil
 
@@ -236,51 +231,94 @@ local function updatePanel()
 	rotateRight.BackgroundTransparency = if isBusy then 0.45 else 0
 end
 
+local function hideFirstPersonObstructions(character: Model)
+	for _, descendant in character:GetDescendants() do
+		if descendant:IsA("BasePart") then
+			local isHead = descendant.Name == "Head"
+			local isAccessory = descendant:FindFirstAncestorWhichIsA("Accessory") ~= nil
+			if (isHead or isAccessory) and hiddenParts[descendant] == nil then
+				hiddenParts[descendant] = descendant.LocalTransparencyModifier
+				descendant.LocalTransparencyModifier = 1
+			end
+		end
+	end
+end
+
+local function restoreFirstPersonObstructions()
+	for part, transparency in hiddenParts do
+		if part.Parent then
+			part.LocalTransparencyModifier = transparency
+		end
+	end
+	table.clear(hiddenParts)
+end
+
 local function setFirstPersonEnabled(enabled: boolean)
 	if enabled and not cameraBound then
+		local camera = workspace.CurrentCamera
 		cameraBound = true
+		cameraPitch = 0
 		savedCameraMode = player.CameraMode
+		savedCameraType = if camera then camera.CameraType else Enum.CameraType.Custom
+		savedMouseBehavior = UserInputService.MouseBehavior
 		player.CameraMode = Enum.CameraMode.LockFirstPerson
+		if camera then
+			camera.CameraType = Enum.CameraType.Scriptable
+		end
 
 		RunService:BindToRenderStep(CAMERA_BIND_NAME, Enum.RenderPriority.Camera.Value + 1, function()
 			if not isStaff then
 				return
 			end
 
-			local camera = workspace.CurrentCamera
+			local currentCamera = workspace.CurrentCamera
 			local character = player.Character
 			local root = if character then character:FindFirstChild("HumanoidRootPart") else nil
-			local humanoid = if character then character:FindFirstChildOfClass("Humanoid") else nil
-			if not camera or not root or not root:IsA("BasePart") or not humanoid then
+			local head = if character then character:FindFirstChild("Head") else nil
+			if
+				not currentCamera
+				or not character
+				or not root
+				or not root:IsA("BasePart")
+				or not head
+				or not head:IsA("BasePart")
+			then
 				return
 			end
 
-			camera.CameraType = Enum.CameraType.Custom
-			camera.CameraSubject = humanoid
+			hideFirstPersonObstructions(character)
+			currentCamera.CameraType = Enum.CameraType.Scriptable
+			if UserInputService.MouseEnabled then
+				UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+			end
 
-			-- The default camera still supplies first-person positioning and mouse pitch.
-			-- Replacing only its yaw after the camera update makes every forced body
-			-- turn (manual rotation and work animations) visible immediately.
-			local pitch = math.asin(math.clamp(camera.CFrame.LookVector.Y, -1, 1))
-			camera.CFrame = CFrame.new(camera.CFrame.Position)
-				* root.CFrame.Rotation
-				* CFrame.Angles(pitch, 0, 0)
+			local eyePosition = head.Position + root.CFrame.UpVector * 0.12
+			currentCamera.CFrame = CFrame.new(eyePosition) * root.CFrame.Rotation * CFrame.Angles(cameraPitch, 0, 0)
+			currentCamera.Focus = currentCamera.CFrame * CFrame.new(0, 0, -12)
 		end)
 	elseif not enabled and cameraBound then
 		RunService:UnbindFromRenderStep(CAMERA_BIND_NAME)
 		cameraBound = false
+		restoreFirstPersonObstructions()
+
 		player.CameraMode = savedCameraMode or Enum.CameraMode.Classic
-		savedCameraMode = nil
+		if savedMouseBehavior then
+			UserInputService.MouseBehavior = savedMouseBehavior
+		end
 
 		local camera = workspace.CurrentCamera
 		local character = player.Character
 		local humanoid = if character then character:FindFirstChildOfClass("Humanoid") else nil
 		if camera then
-			camera.CameraType = Enum.CameraType.Custom
-			if humanoid then
+			camera.CameraType = savedCameraType or Enum.CameraType.Custom
+			if humanoid and camera.CameraType ~= Enum.CameraType.Scriptable then
 				camera.CameraSubject = humanoid
 			end
 		end
+
+		savedCameraMode = nil
+		savedCameraType = nil
+		savedMouseBehavior = nil
 	end
 end
 
@@ -406,6 +444,40 @@ RunService:BindToRenderStep("ChocolateBananaStaffCamera", Enum.RenderPriority.Ca
 	if not isStaff then
 		return
 	end
+	if input.KeyCode == Enum.KeyCode.A or input.KeyCode == Enum.KeyCode.Left or input.KeyCode == Enum.KeyCode.Q then
+		rotateDirection = -1
+	elseif
+		input.KeyCode == Enum.KeyCode.D
+		or input.KeyCode == Enum.KeyCode.Right
+		or input.KeyCode == Enum.KeyCode.E
+	then
+		rotateDirection = 1
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if
+		isStaff
+		and cameraBound
+		and input.UserInputType == Enum.UserInputType.MouseMovement
+		and not UserInputService:GetFocusedTextBox()
+	then
+		cameraPitch = math.clamp(cameraPitch - input.Delta.Y * 0.0025, math.rad(-75), math.rad(75))
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if
+		input.KeyCode == Enum.KeyCode.A
+		or input.KeyCode == Enum.KeyCode.Left
+		or input.KeyCode == Enum.KeyCode.Q
+		or input.KeyCode == Enum.KeyCode.D
+		or input.KeyCode == Enum.KeyCode.Right
+		or input.KeyCode == Enum.KeyCode.E
+	then
+		rotateDirection = 0
+	end
+end)
 
 	local character = player.Character
 	local root = if character then character:FindFirstChild("HumanoidRootPart") else nil

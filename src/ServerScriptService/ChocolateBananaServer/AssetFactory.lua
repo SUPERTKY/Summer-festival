@@ -248,29 +248,44 @@ function AssetFactory:Place(assetName: string, target: CFrame, parent: Instance)
 end
 
 function AssetFactory:CreatePurchasedTool(): Tool
-	local template = self._assetFolder:FindFirstChild("FinishedBananaTool")
-	if template and template:IsA("Tool") then
-		return template:Clone()
-	end
-
 	local tool = Instance.new("Tool")
 	tool.Name = "チョコバナナ"
 	tool.ToolTip = "夏祭りのチョコバナナ"
-
-	local handle = Instance.new("Part")
-	handle.Name = "Handle"
-	handle.Size = Vector3.new(0.2, 0.2, 0.2)
-	handle.Transparency = 1
-	handle.CanCollide = false
-	handle.CanQuery = false
-	handle.Massless = true
-	handle.Parent = tool
+	tool.RequiresHandle = true
+	tool.CanBeDropped = true
+	tool.Grip = self._config.ItemOffsets.FinishedBanana or CFrame.new()
 
 	local finished = self:Clone("FinishedBanana")
+	local root = getRoot(finished)
+	if not root then
+		finished:Destroy()
+		tool:Destroy()
+		error("FinishedBanana must contain a BasePart or MeshPart")
+	end
+
 	setPartProperties(finished, false)
-	finished.Parent = tool
-	pivotInstance(finished, handle.CFrame)
-	weldModelToRoot(finished, handle)
+	weldModelToRoot(finished, root)
+
+	if finished:IsA("BasePart") then
+		finished.Name = "Handle"
+		finished.Parent = tool
+	else
+		local parts = {}
+		for _, descendant in finished:GetDescendants() do
+			if descendant:IsA("BasePart") then
+				table.insert(parts, descendant)
+			end
+		end
+
+		for _, part in parts do
+			if part ~= root and part.Name == "Handle" then
+				part.Name = "FinishedBananaPart"
+			end
+			part.Parent = tool
+		end
+		root.Name = "Handle"
+		finished:Destroy()
+	end
 
 	return tool
 end

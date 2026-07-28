@@ -45,13 +45,10 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 | `SkeweredBanana` | 棒を刺した未コーティング状態（今回用意したメッシュ） |
 | `DippedBanana` | チョコに漬けた状態 |
 | `FinishedBanana` | トッピング後・販売台の商品 |
-| `FinishedBananaTool` | 購入者へ渡すTool（任意） |
 
 各Modelは `PrimaryPart` を設定してください。未設定の場合は、最初に見つかったBasePartが使われます。手持ち状態では、モデル内のBasePartがPrimaryPartへ自動的に固定されます。
 
-皮付きバナナ、棒、チョコ後、完成品の4つがある場合は、4つを選択して
-[`REGISTER_CHOCOLATE_BANANA_MESHES.command.lua`](../studio/REGISTER_CHOCOLATE_BANANA_MESHES.command.lua)
-をコマンドバーで実行すると自動登録できます。
+`FinishedBanana` はトッピング後の手持ち、販売台の商品、購入者へ渡すToolの3か所で共通利用されます。購入時は完成品メッシュのPrimaryPartがToolの `Handle` になります。ほかの商品モデルを省略した場合は動作確認用の仮モデルが使われます。
 
 名前で判定できないメッシュは、Explorerで「皮付きバナナ → 棒 → チョコ後 → 完成品」の順にCtrlを押しながら選択します。`SpecialMesh`を選択した場合は、その親Partが登録されます。
 
@@ -61,9 +58,12 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 
 手に持つ角度は `Config.ItemOffsets`、串刺し合成時の位置は `Config.CompositeOffsets` で調整できます。
 
-## 4. スタッフカメラ
+- 屋台上の木製展示板
+- 展示板左側の工程表示用 `CurrentStepDisplayPoint`
+- 展示板右側の販売用 `DisplayPoint`
+- `ServerStorage/ChocolateBananaAssets/SkeweredBanana` と `FinishedBanana`
 
-スタッフになるとカメラは一人称になり、キャラクターの正面へ固定されます。マウス移動では視点が変わらず、PCでは `A` / `D` だけで左・右へ回転します。辞任すると、スタッフになる前のカメラ設定へ戻ります。
+既存の `DisplayPoint` があれば販売位置を維持するように板を作ります。工程表示は `Banana → SkeweredBanana → DippedBanana → FinishedBanana` の順でサーバーから自動更新されます。板が無い場合はスクリプト先頭の `BOARD_OFFSET` を屋台の形に合わせて調整してください。メッシュを差し替えた場合、以前のアセットは `CommandBarBackups` に残ります。
 
 ## 5. アニメーション
 
