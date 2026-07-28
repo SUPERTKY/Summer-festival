@@ -45,11 +45,10 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 | `SkeweredBanana` | 棒を刺した未コーティング状態（今回用意したメッシュ） |
 | `DippedBanana` | チョコに漬けた状態 |
 | `FinishedBanana` | トッピング後・販売台の商品 |
-| `FinishedBananaTool` | 購入者へ渡すTool（任意） |
 
 各Modelは `PrimaryPart` を設定してください。未設定の場合は、最初に見つかったBasePartが使われます。手持ち状態では、モデル内のBasePartがPrimaryPartへ自動的に固定されます。
 
-`FinishedBananaTool` は `Tool` とし、内部に `Handle` というBasePartを用意します。省略した場合は簡易Toolが自動生成されます。ほかの商品モデルを省略した場合も、動作確認用の仮モデルが使われます。
+`FinishedBanana` はトッピング後の手持ち、販売台の商品、購入者へ渡すToolの3か所で共通利用されます。購入時は完成品メッシュのPrimaryPartがToolの `Handle` になります。ほかの商品モデルを省略した場合は動作確認用の仮モデルが使われます。
 
 手に持つ角度は `Config.ItemOffsets` で調整できます。
 
@@ -64,11 +63,11 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 スクリプトは次を設定します。
 
 - 屋台上の木製展示板
-- 完成チョコバナナと未コーティング串バナナの見本
-- 展示板上の販売用 `DisplayPoint`
+- 展示板左側の工程表示用 `CurrentStepDisplayPoint`
+- 展示板右側の販売用 `DisplayPoint`
 - `ServerStorage/ChocolateBananaAssets/SkeweredBanana` と `FinishedBanana`
 
-既存の `DisplayPoint` があればその真下へ板を作ります。無い場合はスクリプト先頭の `BOARD_OFFSET` を屋台の形に合わせて調整してください。メッシュを差し替えた場合、以前のアセットは `CommandBarBackups` に残ります。
+既存の `DisplayPoint` があれば販売位置を維持するように板を作ります。工程表示は `Banana → SkeweredBanana → DippedBanana → FinishedBanana` の順でサーバーから自動更新されます。板が無い場合はスクリプト先頭の `BOARD_OFFSET` を屋台の形に合わせて調整してください。メッシュを差し替えた場合、以前のアセットは `CommandBarBackups` に残ります。
 
 ## 5. アニメーション
 
