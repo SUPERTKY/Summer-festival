@@ -9,7 +9,7 @@ Roblox Studio で使う、チョコバナナの作成・販売システムです
 - スタッフを作業位置へ固定し、左右の回転だけ許可
 - スタッフ中は一人称視点になり、手動・作業中の旋回へカメラが追従
 - 画面の辞任ボタン
-- 左手にバナナ、右手に棒を持つ
+- 左手に皮なしバナナ、右手に棒を持つ
 - 刺す → チョコに漬ける → トッピング → 販売台へ置く工程
 - チョコ工程中は筒の方向へ一時的に固定
 - トッピング開始1秒後から、下向きの粒を3秒表示
@@ -42,11 +42,13 @@ Roblox Studio で使う、チョコバナナの作成・販売システムです
 
 ### 用意済みメッシュを登録
 
-1. Explorerで「皮付きバナナ → 棒 → チョコ後 → 完成品」の順に、Ctrlを押しながら4つを選択します。
-2. 名前が `Banana`、`Stick`、`DippedBanana`、`FinishedBanana` と判別できる場合は、選択順は問いません。
+1. Explorerで「皮付きバナナ → 皮なしバナナ → 棒 → チョコ後 → 完成品」の順に、Ctrlを押しながら5つを選択します。
+2. 名前が `Banana`、`PeeledBanana`、`Stick`、`DippedBanana`、`FinishedBanana` と判別できる場合は、選択順は問いません。
 3. [`studio/REGISTER_CHOCOLATE_BANANA_MESHES.command.lua`](studio/REGISTER_CHOCOLATE_BANANA_MESHES.command.lua) の全体をコマンドバーへ貼り付けて実行します。
 
-皮付きバナナ、棒、チョコ後、完成品の実物メッシュが登録されます。串刺し状態は皮付きバナナと棒から自動合成し、購入後のToolにも完成品メッシュを使います。
+皮付きバナナ、皮なしバナナ、棒、チョコ後、完成品の実物メッシュが登録されます。串刺し状態は皮なしバナナと棒から自動合成し、購入後のToolにも完成品メッシュを使います。
+
+皮なしバナナだけを後から登録・差し替える場合は、対象を1つ選択して [`studio/REGISTER_PEELED_BANANA.command.lua`](studio/REGISTER_PEELED_BANANA.command.lua) をコマンドバーで実行します。
 
 アニメーション未設定でも工程は進みます。公開済みアニメーションのIDを
 [`Config.lua`](src/ReplicatedStorage/ChocolateBanana/Config.lua) に入れると再生されます。
