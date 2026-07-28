@@ -292,9 +292,7 @@ local function setFirstPersonEnabled(enabled: boolean)
 			end
 
 			local eyePosition = head.Position + root.CFrame.UpVector * 0.12
-			currentCamera.CFrame = CFrame.new(eyePosition)
-				* root.CFrame.Rotation
-				* CFrame.Angles(cameraPitch, 0, 0)
+			currentCamera.CFrame = CFrame.new(eyePosition) * root.CFrame.Rotation * CFrame.Angles(cameraPitch, 0, 0)
 			currentCamera.Focus = currentCamera.CFrame * CFrame.new(0, 0, -12)
 		end)
 	elseif not enabled and cameraBound then
