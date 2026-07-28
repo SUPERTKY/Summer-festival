@@ -23,9 +23,19 @@ Roblox Studio で使う、チョコバナナの作成・販売システムです
 1. [Rojo](https://rojo.space/) と Roblox Studio の Rojo プラグインを用意します。
 2. このリポジトリのルートで `rojo serve` を実行します。
 3. Studio の Rojo プラグインから接続して同期します。
-4. [`docs/STUDIO_SETUP.md`](docs/STUDIO_SETUP.md) に従って屋台の部品へタグを付けます。
-5. [`docs/STALL_LAYOUT.md`](docs/STALL_LAYOUT.md) を参考に部品を配置します。
-6. Studio の **Test → Start** で2人以上を起動し、[`docs/TEST_CHECKLIST.md`](docs/TEST_CHECKLIST.md) を確認します。
+4. 屋台を自動作成する場合は、[`studio/CREATE_CHOCOLATE_BANANA_STALL.command.lua`](studio/CREATE_CHOCOLATE_BANANA_STALL.command.lua) の全体をStudioのコマンドバーへ貼り付けて実行します。
+5. 自作の屋台を使う場合は、[`docs/STUDIO_SETUP.md`](docs/STUDIO_SETUP.md) に従って屋台の部品へタグを付けます。
+6. [`docs/STALL_LAYOUT.md`](docs/STALL_LAYOUT.md) を参考に部品を配置します。
+7. Studio の **Test → Start** で2人以上を起動し、[`docs/TEST_CHECKLIST.md`](docs/TEST_CHECKLIST.md) を確認します。
+
+### コマンドバーで屋台を自動作成
+
+1. Studioで床にするBasePartを1つ選択します。未選択ならワールド原点へ作成されます。
+2. **表示 → コマンドバー** を開きます。
+3. `studio/CREATE_CHOCOLATE_BANANA_STALL.command.lua` のコード全体を貼り付けてEnterを押します。
+4. 作成された屋台Modelは選択状態になります。必要ならModelごと移動します。
+
+実行するたびに `ChocolateBananaStall_01`、`ChocolateBananaStall_02` のように別の屋台が作られます。誤って作成した場合はStudioの「元に戻す」を使えます。
 
 アニメーション未設定でも工程は進みます。公開済みアニメーションのIDを
 [`Config.lua`](src/ReplicatedStorage/ChocolateBanana/Config.lua) に入れると再生されます。
@@ -53,4 +63,3 @@ Roblox Studio で使う、チョコバナナの作成・販売システムです
 ## セキュリティ
 
 商品の工程、屋台の空き、購入価格、残高変更はサーバーで判定します。クライアントはUIと回転入力だけを担当します。
-
