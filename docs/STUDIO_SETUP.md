@@ -42,7 +42,7 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 |---|---|
 | `Banana` | 左手で持つバナナ |
 | `Stick` | 右手で持つ棒 |
-| `SkeweredBanana` | 棒を刺した状態 |
+| `SkeweredBanana` | 棒を刺した未コーティング状態（今回用意したメッシュ） |
 | `DippedBanana` | チョコに漬けた状態 |
 | `FinishedBanana` | トッピング後・販売台の商品 |
 | `FinishedBananaTool` | 購入者へ渡すTool（任意） |
@@ -53,7 +53,24 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 
 手に持つ角度は `Config.ItemOffsets` で調整できます。
 
-## 4. アニメーション
+## 4. 展示板とメッシュをコマンドバーで設定
+
+1. 屋台Modelへ空でない `StallId` 属性があることを確認します。
+2. 用意した未コーティングの串バナナを `SkeweredBanana` に改名します。
+3. Explorerで屋台Modelと `SkeweredBanana` を選択します。
+4. `FinishedBanana` が `ServerStorage/ChocolateBananaAssets` にまだ無い場合は、現在のチョコバナナを `FinishedBanana` に改名して一緒に選択します。
+5. [`STALL_DISPLAY_COMMAND_BAR.lua`](STALL_DISPLAY_COMMAND_BAR.lua) 全体をStudioの **View → Command Bar** へ貼り付けて実行します。
+
+スクリプトは次を設定します。
+
+- 屋台上の木製展示板
+- 完成チョコバナナと未コーティング串バナナの見本
+- 展示板上の販売用 `DisplayPoint`
+- `ServerStorage/ChocolateBananaAssets/SkeweredBanana` と `FinishedBanana`
+
+既存の `DisplayPoint` があればその真下へ板を作ります。無い場合はスクリプト先頭の `BOARD_OFFSET` を屋台の形に合わせて調整してください。メッシュを差し替えた場合、以前のアセットは `CommandBarBackups` に残ります。
+
+## 5. アニメーション
 
 所有グループまたはゲーム所有者としてアニメーションを公開し、`Config.AnimationIds` に数値IDを設定します。
 
@@ -73,7 +90,7 @@ AnimationIds = {
 
 工程時間を変える場合は `Config.ActionDurations` も合わせて変更します。
 
-## 5. 所持金保存
+## 6. 所持金保存
 
 公開ゲームではDataStoreへ自動保存されます。Studioでも保存を試す場合：
 
