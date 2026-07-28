@@ -150,6 +150,8 @@ local function findTaggedPoint(tag)
 	return nil
 end
 
+local board
+
 local function configurePoint(point, name, tag, localX)
 	point.Name = name
 	point.Anchored = true
@@ -171,7 +173,7 @@ installAsset("FinishedBanana", selectedFinished)
 installAsset("SkeweredBanana", selectedSkewered)
 
 local oldSalePoint = findTaggedPoint(SALE_POINT_TAG)
-local board = stall:FindFirstChild(BOARD_NAME)
+board = stall:FindFirstChild(BOARD_NAME)
 if board and not board:IsA("BasePart") then
 	error(BOARD_NAME .. " は BasePart である必要があります。")
 end
