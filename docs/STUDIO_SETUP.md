@@ -18,8 +18,8 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 |---|---|---|
 | スタッフ募集ブロック | `ChocolateBananaStaffJoinBlock` | 触れたプレイヤーへ確認UIを表示 |
 | 作業位置ブロック | `ChocolateBananaWorkAnchor` | スタッフを位置固定。向きが初期方向 |
-| バナナ置き場 | `ChocolateBananaBananaSource` | 左手へバナナを追加 |
-| 棒置き場 | `ChocolateBananaStickSource` | 右手へ棒を追加 |
+| バナナ置き場 | `ChocolateBananaBananaSource` | 工程表示を皮なしバナナへ更新 |
+| 棒置き場 | `ChocolateBananaStickSource` | 串刺し可能な工程へ進める |
 | チョコ入り筒 | `ChocolateBananaChocolateVat` | 筒の方向へ固定して漬ける |
 | トッピング容器 | `ChocolateBananaToppingContainer` | アニメーションと3秒の粒エフェクト |
 | 販売操作ブロック | `ChocolateBananaSellBlock` | 完成品を販売台へ置く |
@@ -41,15 +41,15 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 | 名前 | 用途 |
 |---|---|
 | `Banana` | 皮付きバナナ。材料の初期表示に使用 |
-| `PeeledBanana` | 皮なし・串なしバナナ。手持ち・串刺し前に使用 |
-| `Stick` | 右手で持つ棒 |
+| `PeeledBanana` | 皮なし・串なしバナナ。工程展示の串刺し前に使用 |
+| `Stick` | 串付きモデルの代替合成に使用する棒 |
 | `SkeweredBanana` | 串刺し済み・チョコ前の別メッシュ |
 | `DippedBanana` | チョコに漬けた状態 |
 | `FinishedBanana` | トッピング後・販売台の商品 |
 
-各Modelは `PrimaryPart` を設定してください。未設定の場合は、最初に見つかったBasePartが使われます。手持ち状態では、モデル内のBasePartがPrimaryPartへ自動的に固定されます。
+各Modelは `PrimaryPart` を設定してください。未設定の場合は、最初に見つかったBasePartが使われます。工程展示の移動・回転はModelのPivotを使います。
 
-`FinishedBanana` はトッピング後の手持ち、販売台の商品、購入者へ渡すToolの3か所で共通利用されます。購入時は完成品メッシュのPrimaryPartがToolの `Handle` になります。ほかの商品モデルを省略した場合は動作確認用の仮モデルが使われます。
+`FinishedBanana` はトッピング後の工程展示、販売台の商品、購入者へ渡すToolの3か所で共通利用されます。購入時は完成品メッシュのPrimaryPartがToolの `Handle` になります。ほかの商品モデルを省略した場合は動作確認用の仮モデルが使われます。
 
 名前で判定できないメッシュは、Explorerで「皮付きバナナ → 皮なし・串なしバナナ → 棒 → 串刺し済み・チョコ前 → チョコ後 → 完成品」の順にCtrlを押しながら6つを選択します。`SpecialMesh`を選択した場合は、その親Partが登録されます。
 
@@ -57,7 +57,7 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 
 `FinishedBananaTool` は任意です。省略した場合は、登録した `FinishedBanana` メッシュを使って購入者用Toolが自動生成されます。完成品Toolを個別に用意する場合は `Tool` 内に `Handle` というBasePartを置きます。
 
-手に持つ角度は `Config.ItemOffsets`、串刺し合成時の位置は `Config.CompositeOffsets` で調整できます。
+購入Toolの持ち方は `Config.ItemOffsets.FinishedBanana`、串刺し代替合成時の位置は `Config.CompositeOffsets` で調整できます。
 
 - 屋台上の木製展示板
 - 展示板左側の工程表示用 `CurrentStepDisplayPoint`
@@ -68,7 +68,7 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 
 ## 5. アニメーション
 
-`Config.AnimationIds` が空でも、クライアント側の手続き型モーション、進行バー、完了エフェクトが動きます。独自アニメーションを使う場合は、所有グループまたはゲーム所有者として公開し、`Config.AnimationIds` に数値IDを設定します。IDを設定した工程では腕の手続き型モーションを止め、独自アニメーションとの競合を避けます。
+`Config.AnimationIds` が空でも、工程展示モデルの手続き型モーション、進行バー、完了エフェクトが動きます。独自のキャラクターアニメーションも加える場合は、所有グループまたはゲーム所有者として公開し、`Config.AnimationIds` に数値IDを設定します。商品自体は手に持たず、見た目の変化は工程展示で行います。
 
 ```lua
 AnimationIds = {
@@ -80,9 +80,9 @@ AnimationIds = {
 
 | 名前 | 推奨長さ | タイミング |
 |---|---:|---|
-| `Skewer` | 約1.6秒 | 左手のバナナへ右手の棒を刺す |
-| `Dip` | 約2.5秒 | チョコの筒へ下ろして戻す |
-| `Topping` | 約4.2秒 | 1秒後から3秒間、下向きエフェクト |
+| `Skewer` | 約1.6秒 | 工程展示の皮なしバナナが傾き、串付きへ変化 |
+| `Dip` | 約2.5秒 | 工程展示の串付きバナナが上下 |
+| `Topping` | 約4.2秒 | 工程展示が小刻みに動き、1秒後から3秒間粒を表示 |
 
 工程時間を変える場合は `Config.ActionDurations` も合わせて変更します。
 

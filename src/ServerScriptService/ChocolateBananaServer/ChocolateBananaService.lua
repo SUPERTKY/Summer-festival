@@ -12,7 +12,6 @@ type StaffState = {
 	stallId: string,
 	step: string,
 	busy: boolean,
-	held: { Instance },
 	lockObjects: { Instance },
 	originalMovement: {
 		walkSpeed: number,
@@ -196,39 +195,8 @@ function ChocolateBananaService:_syncCurrentDisplay(state: StaffState)
 
 	item.Name = `CB_CurrentStep_{assetName}`
 	item:SetAttribute("ChocolateBananaDisplayAsset", assetName)
+	item:SetAttribute("ChocolateBananaStallId", state.stallId)
 	self._currentDisplayByStall[state.stallId] = item
-end
-
-function ChocolateBananaService:_clearHeld(state: StaffState)
-	for _, instance in state.held do
-		if instance.Parent then
-			instance:Destroy()
-		end
-	end
-	table.clear(state.held)
-end
-
-function ChocolateBananaService:_attachItem(
-	player: Player,
-	state: StaffState,
-	hand: string,
-	itemName: string
-): Instance?
-	local character = player.Character
-	if not character then
-		return nil
-	end
-
-	local item = self._assets:Attach(character, hand, itemName)
-	if item then
-		table.insert(state.held, item)
-	end
-	return item
-end
-
-function ChocolateBananaService:_replaceHeld(player: Player, state: StaffState, hand: string, itemName: string): boolean
-	self:_clearHeld(state)
-	return self:_attachItem(player, state, hand, itemName) ~= nil
 end
 
 function ChocolateBananaService:_lockAtStation(player: Player, stallId: string): boolean
@@ -298,7 +266,6 @@ function ChocolateBananaService:_join(player: Player, stallId: string)
 		stallId = stallId,
 		step = "Empty",
 		busy = false,
-		held = {},
 		lockObjects = {},
 		originalMovement = {
 			walkSpeed = humanoid.WalkSpeed,
@@ -327,7 +294,6 @@ function ChocolateBananaService:_resign(player: Player, sendMessage: boolean)
 		return
 	end
 
-	self:_clearHeld(state)
 	for _, object in state.lockObjects do
 		if object.Parent then
 			object:Destroy()
@@ -457,8 +423,8 @@ function ChocolateBananaService:_startBusyAction(
 end
 
 function ChocolateBananaService:_addToppingEffect(state: StaffState)
-	local held = state.held[1]
-	local root = if held then getRoot(held) else nil
+	local display = self._currentDisplayByStall[state.stallId]
+	local root = if display and display.Parent then getRoot(display) else nil
 	if not root then
 		return
 	end
@@ -501,10 +467,8 @@ function ChocolateBananaService:_takeBanana(player: Player, stallId: string)
 		return
 	end
 
-	if self:_attachItem(player, state, "LeftHand", "PeeledBanana") then
-		state.step = "Banana"
-		self:_sendStatus(player)
-	end
+	state.step = "Banana"
+	self:_sendStatus(player)
 end
 
 function ChocolateBananaService:_takeStick(player: Player, stallId: string)
@@ -517,10 +481,8 @@ function ChocolateBananaService:_takeStick(player: Player, stallId: string)
 		return
 	end
 
-	if self:_attachItem(player, state, "RightHand", "Stick") then
-		state.step = "Ingredients"
-		self:_sendStatus(player)
-	end
+	state.step = "Ingredients"
+	self:_sendStatus(player)
 end
 
 function ChocolateBananaService:_skewer(player: Player)
@@ -531,9 +493,7 @@ function ChocolateBananaService:_skewer(player: Player)
 		self._config.AnimationIds.Skewer,
 		nil,
 		function(state)
-			if self:_replaceHeld(player, state, "RightHand", "SkeweredBanana") then
-				state.step = "Skewered"
-			end
+			state.step = "Skewered"
 		end
 	)
 end
@@ -551,9 +511,7 @@ function ChocolateBananaService:_dip(player: Player, stallId: string, vat: BaseP
 		self._config.AnimationIds.Dip,
 		vat,
 		function(current)
-			if self:_replaceHeld(player, current, "RightHand", "DippedBanana") then
-				current.step = "Dipped"
-			end
+			current.step = "Dipped"
 		end
 	)
 end
@@ -578,9 +536,7 @@ function ChocolateBananaService:_top(player: Player, stallId: string, container:
 		self._config.AnimationIds.Topping,
 		container,
 		function(current)
-			if self:_replaceHeld(player, current, "RightHand", "FinishedBanana") then
-				current.step = "Finished"
-			end
+			current.step = "Finished"
 		end
 	)
 end
@@ -663,7 +619,6 @@ function ChocolateBananaService:_sell(player: Player, stallId: string)
 		instance = item,
 		prompt = prompt,
 	}
-	self:_clearHeld(state)
 	state.step = "Empty"
 	self:_sendStatus(player)
 	self:_notify(player, "チョコバナナを販売台に置きました。")
