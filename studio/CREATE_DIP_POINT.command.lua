@@ -31,7 +31,7 @@ local ok, result = xpcall(function()
 
 	local dipPoint = Instance.new("Attachment")
 	dipPoint.Name = DIP_POINT_NAME
-	dipPoint.CFrame = CFrame.new(0, vat.Size.Y / 2 + DEFAULT_ABOVE_VAT, 0)
+	dipPoint.CFrame = CFrame.new(0, vat.Size.Y / 2 + DEFAULT_ABOVE_VAT, 0) * DEFAULT_ORIENTATION
 	dipPoint.Visible = true
 	dipPoint.Parent = vat
 
