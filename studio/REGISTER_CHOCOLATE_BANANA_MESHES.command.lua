@@ -1,19 +1,21 @@
--- Roblox Studioで次の5つのメッシュ／Modelを選択してから、
+-- Roblox Studioで次の6つのメッシュ／Modelを選択してから、
 -- 「表示 > コマンドバー」へこのファイル全体を貼り付けて実行してください。
 --
 -- 選ぶオブジェクトの名前には次のどれかを含めてください。
 -- 皮付きバナナ: Banana / banana / バナナ
 -- 皮なしバナナ: PeeledBanana / peeled / skinless / 皮なし / 皮無し / むき
--- 棒: Stick / stick / Skewer / skewer / 棒
+-- 棒: Stick / stick / 棒
+-- 串刺し済み: SkeweredBanana / skewered / 串付き / 串刺し済み
 -- チョコ後: DippedBanana / dipped / チョコ後
 -- 完成品: FinishedBanana / finished / 完成
 --
--- 名前が違う場合は、Explorerで次の順番にCtrlを押しながら5個を選択します。
+-- 名前が違う場合は、Explorerで次の順番にCtrlを押しながら6個を選択します。
 -- 1. 皮付きバナナ
 -- 2. 皮なしバナナ
 -- 3. 棒
--- 4. チョコ後
--- 5. 完成品
+-- 4. 串刺し済み・チョコ前
+-- 5. チョコ後
+-- 6. 完成品
 
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local Selection = game:GetService("Selection")
@@ -26,6 +28,14 @@ local function classify(instance)
 	end
 	if string.find(name, "dipped", 1, true) or string.find(instance.Name, "チョコ後", 1, true) then
 		return "DippedBanana"
+	end
+	if
+		string.find(name, "skewered", 1, true)
+		or string.find(instance.Name, "串付き", 1, true)
+		or string.find(instance.Name, "串刺し済み", 1, true)
+		or string.find(instance.Name, "刺した", 1, true)
+	then
+		return "SkeweredBanana"
 	end
 	if
 		string.find(name, "peeled", 1, true)
@@ -90,19 +100,21 @@ end
 local allNamed = sources.Banana
 	and sources.PeeledBanana
 	and sources.Stick
+	and sources.SkeweredBanana
 	and sources.DippedBanana
 	and sources.FinishedBanana
 if not allNamed then
 	assert(
-		#selected == 5,
-		`5個を選択してください。現在の有効な選択数: {#selected}個。`
-			.. " 選択順は「皮付きバナナ → 皮なしバナナ → 棒 → チョコ後 → 完成品」です。"
+		#selected == 6,
+		`6個を選択してください。現在の有効な選択数: {#selected}個。`
+			.. " 選択順は「皮付きバナナ → 皮なしバナナ → 棒 → 串刺し済み・チョコ前 → チョコ後 → 完成品」です。"
 	)
 	sources.Banana = selected[1]
 	sources.PeeledBanana = selected[2]
 	sources.Stick = selected[3]
-	sources.DippedBanana = selected[4]
-	sources.FinishedBanana = selected[5]
+	sources.SkeweredBanana = selected[4]
+	sources.DippedBanana = selected[5]
+	sources.FinishedBanana = selected[6]
 	print("名前で判定できなかったため、Explorerで選択した順番を使用します。")
 end
 
@@ -120,7 +132,7 @@ local ok, result = xpcall(function()
 	end
 
 	local registered = {}
-	for _, assetName in { "Banana", "PeeledBanana", "Stick", "DippedBanana", "FinishedBanana" } do
+	for _, assetName in { "Banana", "PeeledBanana", "Stick", "SkeweredBanana", "DippedBanana", "FinishedBanana" } do
 		local old = assets:FindFirstChild(assetName)
 		if old then
 			local backupName = `{assetName}_Backup`
@@ -142,13 +154,14 @@ local ok, result = xpcall(function()
 	end
 
 	Selection:Set(registered)
-	print("登録完了: Banana / PeeledBanana / Stick / DippedBanana / FinishedBanana")
+	print("登録完了: Banana / PeeledBanana / Stick / SkeweredBanana / DippedBanana / FinishedBanana")
 	print(`Banana <- {sources.Banana:GetFullName()}`)
 	print(`PeeledBanana <- {sources.PeeledBanana:GetFullName()}`)
 	print(`Stick <- {sources.Stick:GetFullName()}`)
+	print(`SkeweredBanana <- {sources.SkeweredBanana:GetFullName()}`)
 	print(`DippedBanana <- {sources.DippedBanana:GetFullName()}`)
 	print(`FinishedBanana <- {sources.FinishedBanana:GetFullName()}`)
-	print("串付き状態だけは、皮なしバナナと棒のメッシュから自動合成されます。")
+	print("串刺し後は登録したSkeweredBananaを使用します。未登録時だけ皮なしバナナと棒から自動合成されます。")
 	return true
 end, debug.traceback)
 
