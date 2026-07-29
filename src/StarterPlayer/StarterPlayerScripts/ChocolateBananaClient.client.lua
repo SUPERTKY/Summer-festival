@@ -1,8 +1,10 @@
 --!strict
 
+local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
@@ -31,6 +33,30 @@ local STEP_TEXT = {
 	Skewered = "④ チョコの筒に漬ける",
 	Dipped = "⑤ トッピング容器を選ぶ",
 	Finished = "⑥ 販売ブロックを選ぶ",
+}
+
+local ACTION_DURATION_BY_STEP = {
+	Ingredients = Config.ActionDurations.Skewer,
+	Skewered = Config.ActionDurations.Dip,
+	Dipped = Config.ActionDurations.Topping,
+}
+
+local ACTION_ANIMATION_BY_STEP = {
+	Ingredients = Config.AnimationIds.Skewer,
+	Skewered = Config.AnimationIds.Dip,
+	Dipped = Config.AnimationIds.Topping,
+}
+
+local ACTION_COLOR_BY_STEP = {
+	Ingredients = COLORS.green,
+	Skewered = COLORS.chocolate,
+	Dipped = COLORS.yellow,
+}
+
+local COMPLETE_TEXT_BY_STEP = {
+	Skewered = "串刺しできました！",
+	Dipped = "チョコがきれいにつきました！",
+	Finished = "チョコバナナ完成！",
 }
 
 local function corner(parent: Instance, radius: number)
@@ -106,6 +132,10 @@ staffFrame.Parent = gui
 corner(staffFrame, 16)
 stroke(staffFrame, COLORS.brown, 3)
 
+local staffScale = Instance.new("UIScale")
+staffScale.Scale = 1
+staffScale.Parent = staffFrame
+
 local staffTitle = makeLabel(
 	staffFrame,
 	"🍌 チョコバナナ屋台スタッフ",
@@ -117,6 +147,24 @@ staffTitle.TextXAlignment = Enum.TextXAlignment.Left
 local resignButton = makeButton(staffFrame, "辞任", UDim2.fromOffset(112, 36), UDim2.new(1, -126, 0, 8), COLORS.red)
 local stepLabel = makeLabel(staffFrame, "", UDim2.new(1, -28, 0, 34), UDim2.fromOffset(14, 48))
 stepLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local progressTrack = Instance.new("Frame")
+progressTrack.Name = "ActionProgressTrack"
+progressTrack.Position = UDim2.fromOffset(14, 86)
+progressTrack.Size = UDim2.new(1, -28, 0, 7)
+progressTrack.BackgroundColor3 = Color3.fromRGB(218, 198, 166)
+progressTrack.BorderSizePixel = 0
+progressTrack.Visible = false
+progressTrack.Parent = staffFrame
+corner(progressTrack, 4)
+
+local progressFill = Instance.new("Frame")
+progressFill.Name = "Fill"
+progressFill.Size = UDim2.fromScale(0, 1)
+progressFill.BackgroundColor3 = COLORS.green
+progressFill.BorderSizePixel = 0
+progressFill.Parent = progressTrack
+corner(progressFill, 4)
 
 local actionButton =
 	makeButton(staffFrame, "バナナを刺す", UDim2.fromOffset(190, 44), UDim2.new(0.5, -95, 1, -56), COLORS.green)
@@ -191,6 +239,18 @@ local savedMouseBehavior: Enum.MouseBehavior? = nil
 local savedMouseIconEnabled: boolean? = nil
 local hiddenParts: { [BasePart]: number } = {}
 
+type ProceduralFeedbackState = {
+	step: string,
+	startedAt: number,
+	duration: number,
+	useProceduralPose: boolean,
+}
+
+local activeFeedback: ProceduralFeedbackState? = nil
+local feedbackLeftShoulder: Motor6D? = nil
+local feedbackRightShoulder: Motor6D? = nil
+local feedbackVersion = 0
+
 local CAMERA_BIND_NAME = "ChocolateBananaFirstPersonCamera"
 
 local function bindMoney()
@@ -211,6 +271,149 @@ local function showToast(message: string)
 	task.delay(3, function()
 		if toastVersion == version then
 			toast.Visible = false
+		end
+	end)
+end
+
+
+local function findShoulder(character: Model, side: string): Motor6D?
+	local wanted = string.lower(side .. "Shoulder")
+	for _, descendant in character:GetDescendants() do
+		if descendant:IsA("Motor6D") then
+			local compactName = string.gsub(string.lower(descendant.Name), " ", "")
+			if compactName == wanted then
+				return descendant
+			end
+		end
+	end
+	return nil
+end
+
+local function resetProceduralPose()
+	if feedbackLeftShoulder and feedbackLeftShoulder.Parent then
+		feedbackLeftShoulder.Transform = CFrame.new()
+	end
+	if feedbackRightShoulder and feedbackRightShoulder.Parent then
+		feedbackRightShoulder.Transform = CFrame.new()
+	end
+	feedbackLeftShoulder = nil
+	feedbackRightShoulder = nil
+end
+
+local function cancelProceduralFeedback()
+	feedbackVersion += 1
+	activeFeedback = nil
+	progressTrack.Visible = false
+	progressFill.Size = UDim2.fromScale(0, 1)
+	resetProceduralPose()
+end
+
+local function startProceduralFeedback(step: string)
+	feedbackVersion += 1
+	resetProceduralPose()
+
+	local character = player.Character
+	if character then
+		feedbackLeftShoulder = findShoulder(character, "left")
+		feedbackRightShoulder = findShoulder(character, "right")
+	end
+
+	local animationId = ACTION_ANIMATION_BY_STEP[step]
+	activeFeedback = {
+		step = step,
+		startedAt = os.clock(),
+		duration = math.max(ACTION_DURATION_BY_STEP[step] or 1, 0.05),
+		useProceduralPose = animationId == nil or animationId == "",
+	}
+	progressFill.Size = UDim2.fromScale(0, 1)
+	progressFill.BackgroundColor3 = ACTION_COLOR_BY_STEP[step] or COLORS.green
+	progressTrack.Visible = true
+end
+
+local function getHeldRoot(assetName: string): BasePart?
+	local character = player.Character
+	local item = if character then character:FindFirstChild("CB_" .. assetName) else nil
+	if not item then
+		return nil
+	end
+	if item:IsA("BasePart") then
+		return item
+	end
+	if item:IsA("Model") then
+		return item.PrimaryPart or item:FindFirstChildWhichIsA("BasePart", true)
+	end
+	return nil
+end
+
+local function emitCompletionParticles(assetName: string, isFinal: boolean)
+	local root = getHeldRoot(assetName)
+	if not root then
+		return
+	end
+
+	local attachment = Instance.new("Attachment")
+	attachment.Name = "ChocolateBananaCompletionEffect"
+	attachment.Parent = root
+
+	local emitter = Instance.new("ParticleEmitter")
+	emitter.Name = "CompletionSparkles"
+	emitter.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	emitter.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 236, 120)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
+	})
+	emitter.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.05),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	emitter.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, if isFinal then 0.28 else 0.18),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	emitter.Lifetime = NumberRange.new(0.35, 0.6)
+	emitter.Speed = NumberRange.new(0.8, 1.8)
+	emitter.SpreadAngle = Vector2.new(180, 180)
+	emitter.LightEmission = 1
+	emitter.Rate = 0
+	emitter.Parent = attachment
+	emitter:Emit(if isFinal then 26 else 12)
+	Debris:AddItem(attachment, 1)
+end
+
+local function finishProceduralFeedback(completedStep: string)
+	feedbackVersion += 1
+	local version = feedbackVersion
+	activeFeedback = nil
+	resetProceduralPose()
+	progressFill.Size = UDim2.fromScale(1, 1)
+
+	local completionText = COMPLETE_TEXT_BY_STEP[completedStep]
+	if completionText then
+		showToast(completionText)
+		emitCompletionParticles(completedStep, completedStep == "Finished")
+
+		staffScale.Scale = 1
+		local grow = TweenService:Create(
+			staffScale,
+			TweenInfo.new(0.1, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+			{ Scale = if completedStep == "Finished" then 1.055 else 1.025 }
+		)
+		grow:Play()
+		grow.Completed:Connect(function()
+			if feedbackVersion == version then
+				TweenService:Create(
+					staffScale,
+					TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+					{ Scale = 1 }
+				):Play()
+			end
+		end)
+	end
+
+	task.delay(0.3, function()
+		if feedbackVersion == version and not activeFeedback then
+			progressTrack.Visible = false
+			progressFill.Size = UDim2.fromScale(0, 1)
 		end
 	end)
 end
@@ -341,6 +544,57 @@ local function setFirstPersonEnabled(enabled: boolean)
 	end
 end
 
+
+RunService:BindToRenderStep(
+	"ChocolateBananaProceduralFeedback",
+	Enum.RenderPriority.Camera.Value + 2,
+	function()
+		local feedback = activeFeedback
+		if not feedback or not isStaff then
+			return
+		end
+
+		local progress = math.clamp((os.clock() - feedback.startedAt) / feedback.duration, 0, 1)
+		local smooth = 0.5 - math.cos(progress * math.pi) * 0.5
+		local pulse = math.sin(progress * math.pi)
+		progressFill.Size = UDim2.fromScale(progress, 1)
+
+		if feedback.useProceduralPose then
+			local left = feedbackLeftShoulder
+			local right = feedbackRightShoulder
+			if feedback.step == "Ingredients" then
+				if left and left.Parent then
+					left.Transform = CFrame.Angles(math.rad(-18) * pulse, 0, math.rad(-7) * pulse)
+				end
+				if right and right.Parent then
+					right.Transform = CFrame.Angles(math.rad(-58) * smooth, 0, math.rad(12) * pulse)
+				end
+			elseif feedback.step == "Skewered" then
+				local dipAmount = math.sin(progress * math.pi)
+				if right and right.Parent then
+					right.Transform = CFrame.Angles(math.rad(-72) * dipAmount, 0, math.rad(5) * pulse)
+				end
+			elseif feedback.step == "Dipped" then
+				local shake = math.sin(progress * math.pi * 10) * (1 - progress)
+				if right and right.Parent then
+					right.Transform = CFrame.Angles(math.rad(-32) * pulse, 0, math.rad(12) * shake)
+				end
+			end
+		end
+
+		local camera = workspace.CurrentCamera
+		if camera and cameraBound then
+			if feedback.step == "Ingredients" then
+				camera.CFrame *= CFrame.new(0, 0, -0.035 * pulse)
+			elseif feedback.step == "Skewered" then
+				camera.CFrame *= CFrame.new(0, -0.07 * math.sin(progress * math.pi), 0)
+			elseif feedback.step == "Dipped" then
+				camera.CFrame *= CFrame.Angles(0, 0, math.rad(0.35) * math.sin(progress * math.pi * 8))
+			end
+		end
+	end
+)
+
 local function setRotationFromButton(direction: number, inputState: Enum.UserInputState)
 	if inputState == Enum.UserInputState.Begin and isStaff and not isBusy then
 		rotateDirection = direction
@@ -423,6 +677,7 @@ staffStatus.OnClientEvent:Connect(function(payload)
 		return
 	end
 	local wasStaff = isStaff
+	local wasBusy = isBusy
 	isStaff = payload.isStaff == true
 	isBusy = payload.busy == true
 	currentStep = if type(payload.step) == "string" then payload.step else "None"
@@ -431,6 +686,17 @@ staffStatus.OnClientEvent:Connect(function(payload)
 	end
 	if isBusy then
 		rotateDirection = 0
+	end
+	if isBusy and not wasBusy and isStaff then
+		startProceduralFeedback(currentStep)
+	elseif not isBusy and wasBusy then
+		if isStaff then
+			finishProceduralFeedback(currentStep)
+		else
+			cancelProceduralFeedback()
+		end
+	elseif not isStaff then
+		cancelProceduralFeedback()
 	end
 	updatePanel()
 end)
@@ -462,6 +728,8 @@ actionButton.Activated:Connect(function()
 end)
 
 script.Destroying:Connect(function()
+	RunService:UnbindFromRenderStep("ChocolateBananaProceduralFeedback")
+	cancelProceduralFeedback()
 	setFirstPersonEnabled(false)
 end)
 

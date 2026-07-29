@@ -11,6 +11,7 @@ Roblox Studio で使う、チョコバナナの作成・販売システムです
 - 画面の辞任ボタン
 - 左手に皮なしバナナ、右手に棒を持つ
 - 刺す → チョコに漬ける → トッピング → 販売台へ置く工程
+- 調理中の腕・カメラの手続き型モーション、進行バー、工程完了の光とメッセージ
 - チョコ工程中は筒の方向へ一時的に固定
 - トッピング開始1秒後から、下向きの粒を3秒表示
 - 完成品を `DisplayPoint` の位置と回転で設置
@@ -50,7 +51,7 @@ Roblox Studio で使う、チョコバナナの作成・販売システムです
 
 皮なし・串なしバナナだけを後から登録・差し替える場合は、対象を1つ選択して [`studio/REGISTER_PEELED_BANANA.command.lua`](studio/REGISTER_PEELED_BANANA.command.lua) をコマンドバーで実行します。串刺し済み・チョコ前のバナナは [`studio/REGISTER_SKEWERED_BANANA.command.lua`](studio/REGISTER_SKEWERED_BANANA.command.lua) で個別に登録・差し替えできます。
 
-アニメーション未設定でも工程は進みます。公開済みアニメーションのIDを
+アニメーション未設定でも、串刺し・チョコ漬け・トッピングでは手続き型の腕とカメラの動作が再生されます。公開済みアニメーションのIDを
 [`Config.lua`](src/ReplicatedStorage/ChocolateBanana/Config.lua) に入れると再生されます。
 
 ## 主な設定
