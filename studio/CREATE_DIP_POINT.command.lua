@@ -1,15 +1,17 @@
 -- Roblox StudioでChocolateVatのBasePartを1つ選択してから、
 -- 「表示 > コマンドバー」へこのファイル全体を貼り付けて実行してください。
 --
--- 選択した筒の上へ ChocolateBananaDipPoint Attachment を作成します。
--- 実行後にAttachmentが選択されるので、Studioの移動・回転ツールで
--- 串付きバナナを開始させたい位置と向きへ調整してください。
+-- 選択した筒へ開始点 ChocolateBananaDipPoint と
+-- 終点 ChocolateBananaDipEndPoint の2つのAttachmentを作成します。
+-- 開始点はバナナの位置・向き、終点は沈み切る位置です。
 
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local Selection = game:GetService("Selection")
 
 local DIP_POINT_NAME = "ChocolateBananaDipPoint"
+local DIP_END_POINT_NAME = "ChocolateBananaDipEndPoint"
 local DEFAULT_ABOVE_VAT = 0.8
+local DEFAULT_DIP_DEPTH = 1.4
 local DEFAULT_ORIENTATION = CFrame.Angles(0, 0, math.rad(180))
 
 local selected = Selection:Get()
@@ -28,16 +30,34 @@ local ok, result = xpcall(function()
 	if old then
 		old:Destroy()
 	end
+	local oldEnd = vat:FindFirstChild(DIP_END_POINT_NAME)
+	if oldEnd then
+		oldEnd:Destroy()
+	end
+
+	-- RobloxのCylinderはローカルX軸が筒の長軸です。
+	local localOutwardAxis = Vector3.xAxis
+	if vat.CFrame.RightVector:Dot(Vector3.yAxis) < 0 then
+		localOutwardAxis = -localOutwardAxis
+	end
+	local startOffset = localOutwardAxis * (vat.Size.X / 2 + DEFAULT_ABOVE_VAT)
+	local endOffset = startOffset - localOutwardAxis * DEFAULT_DIP_DEPTH
 
 	local dipPoint = Instance.new("Attachment")
 	dipPoint.Name = DIP_POINT_NAME
-	dipPoint.CFrame = CFrame.new(0, vat.Size.Y / 2 + DEFAULT_ABOVE_VAT, 0) * DEFAULT_ORIENTATION
+	dipPoint.CFrame = CFrame.new(startOffset) * DEFAULT_ORIENTATION
 	dipPoint.Visible = true
 	dipPoint.Parent = vat
 
-	Selection:Set({ dipPoint })
-	print(`作成完了: {vat:GetFullName()}/{DIP_POINT_NAME}`)
-	print("このAttachmentを移動・回転すると、チョコ漬け開始時のバナナも同じ位置・向きになります。")
+	local dipEndPoint = Instance.new("Attachment")
+	dipEndPoint.Name = DIP_END_POINT_NAME
+	dipEndPoint.Position = endOffset
+	dipEndPoint.Visible = true
+	dipEndPoint.Parent = vat
+
+	Selection:Set({ dipPoint, dipEndPoint })
+	print(`作成完了: {vat:GetFullName()}/{DIP_POINT_NAME}, {DIP_END_POINT_NAME}`)
+	print("開始点はバナナの位置・向き、終点は沈み切る位置です。2点間が実際の移動方向になります。")
 	return true
 end, debug.traceback)
 
