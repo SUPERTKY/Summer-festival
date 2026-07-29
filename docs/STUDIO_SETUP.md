@@ -81,10 +81,20 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 - `Rate = 0` のEmitter：トッピング開始時に30個を一度だけ放出
 - `Rate > 0` のEmitter：3秒間有効化
 
-チョコ漬けは常に `ChocolateVat` の上方向から下方向へ移動します。バナナ自体の上下は
-`Config.ActionVisuals.DipOrientationOffset` で調整します。
+## 6. チョコ漬けの位置・向き
 
-## 6. アニメーション
+タグを付けたチョコ筒のBasePartを1つ選択し、
+[`CREATE_DIP_POINT.command.lua`](../studio/CREATE_DIP_POINT.command.lua)
+をコマンドバーで実行します。
+
+チョコ筒内に開始点 `ChocolateBananaDipPoint` と終点 `ChocolateBananaDipEndPoint` が作成されます。
+開始点のCFrameが `SkeweredBanana` の開始位置・向きになり、終点の位置まで直線移動します。
+2点を結ぶ方向がそのまま移動方向になるため、筒口からチョコ内部へ向くように終点を置いてください。
+
+2点がない既存屋台では、Roblox Cylinderの長軸であるローカルX軸を使います。
+開始時の回転だけは `Config.ActionVisuals.DipOrientationOffset` が互換用として使われます。
+
+## 7. アニメーション
 
 `Config.AnimationIds` が空でも、棒を刺す一時モデル、チョコ筒で上下する一時モデル、進行バー、完了エフェクトが動きます。独自のキャラクターアニメーションも加える場合は、所有グループまたはゲーム所有者として公開し、`Config.AnimationIds` に数値IDを設定します。商品自体は手に持たず、見た目の変化は工程展示で行います。
 
@@ -104,7 +114,7 @@ AnimationIds = {
 
 工程時間を変える場合は `Config.ActionDurations` も合わせて変更します。
 
-## 7. 所持金保存
+## 8. 所持金保存
 
 公開ゲームではDataStoreへ自動保存されます。Studioでも保存を試す場合：
 

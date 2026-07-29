@@ -63,11 +63,15 @@ local Config = {
 	ActionVisuals = {
 		-- 棒はCompositeOffsets.Stickの位置へ向かって、この相対位置から移動します。
 		SkewerStickStartOffset = CFrame.new(0, -1.2, 0),
+		-- ChocolateVat内にこの名前のAttachmentがあれば、その位置と向きを正解として使います。
+		DipPointName = "ChocolateBananaDipPoint",
+		-- このAttachmentの位置を漬け込みの終点として使います。
+		DipEndPointName = "ChocolateBananaDipEndPoint",
 		-- チョコ筒の上面からどれだけ上で開始し、何スタッド沈めるかです。
 		DipAboveVat = 0.8,
 		DipDepth = 1.4,
-		-- バナナ側の上下が逆の場合は、X/Y/Zの180度を切り替えて調整します。
-		DipOrientationOffset = CFrame.Angles(math.rad(180), 0, 0),
+		-- DipPointがない既存屋台だけに使う互換用の回転です。
+		DipOrientationOffset = CFrame.Angles(0, 0, math.rad(180)),
 	},
 
 	EffectOffsets = {

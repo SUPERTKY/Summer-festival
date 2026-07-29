@@ -313,13 +313,33 @@ function ChocolateBananaService:_startDipVisual(state: StaffState, vat: BasePart
 	self:_clearCurrentDisplay(state.stallId)
 	self:_clearActionVisuals(state.stallId)
 
-	local topPosition = vat.Position
-		+ vat.CFrame.UpVector * (vat.Size.Y / 2 + self._config.ActionVisuals.DipAboveVat)
-	local start = CFrame.new(topPosition)
-		* vat.CFrame.Rotation
-		* self._config.ActionVisuals.DipOrientationOffset
-	-- バナナのローカル下方向ではなく、チョコ筒の下方向へ沈めます。
-	local dipped = start - vat.CFrame.UpVector * self._config.ActionVisuals.DipDepth
+	local dipPoint = vat:FindFirstChild(self._config.ActionVisuals.DipPointName, true)
+	local dipEndPoint = vat:FindFirstChild(self._config.ActionVisuals.DipEndPointName, true)
+	-- RobloxのCylinderはローカルX軸が筒の長軸です。上側を外向きとして揃えます。
+	local vatOutwardAxis = vat.CFrame.RightVector
+	if vatOutwardAxis:Dot(Vector3.yAxis) < 0 then
+		vatOutwardAxis = -vatOutwardAxis
+	end
+
+	local start: CFrame
+	if dipPoint and dipPoint:IsA("Attachment") then
+		-- Studioで設定したDipPointの位置・回転を一切変えず、そのまま使用します。
+		start = dipPoint.WorldCFrame
+	else
+		local topPosition = vat.Position
+			+ vatOutwardAxis * (vat.Size.X / 2 + self._config.ActionVisuals.DipAboveVat)
+		start = CFrame.new(topPosition)
+			* vat.CFrame.Rotation
+			* self._config.ActionVisuals.DipOrientationOffset
+	end
+
+	local dipped: CFrame
+	if dipEndPoint and dipEndPoint:IsA("Attachment") then
+		-- 終点の位置へ直線移動し、バナナ自身の回転は開始時のまま維持します。
+		dipped = CFrame.new(dipEndPoint.WorldPosition) * start.Rotation
+	else
+		dipped = start - vatOutwardAxis * self._config.ActionVisuals.DipDepth
+	end
 
 	local banana = self._assets:Place("SkeweredBanana", start, workspace)
 	if not banana then

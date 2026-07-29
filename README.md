@@ -60,6 +60,14 @@ Roblox Studio で使う、チョコバナナの作成・販売システムです
 
 元のParticleEmitterがAttachment内にある場合は、元モデルのルートPartを基準に位置と向きを保存します。以前のコマンドで登録したEmitterは、更新後のコマンドでもう一度登録してください。位置と追加回転は `Config.EffectOffsets` で調整できます。
 
+### チョコ漬けの位置・向きを設定
+
+1. Studioでタグを付けたチョコ筒のBasePartを1つ選択します。
+2. [`studio/CREATE_DIP_POINT.command.lua`](studio/CREATE_DIP_POINT.command.lua) 全体をコマンドバーで実行します。
+3. 作成された開始点 `ChocolateBananaDipPoint` と終点 `ChocolateBananaDipEndPoint` を調整します。
+
+`SkeweredBanana` は開始点と同じ位置・向きで現れ、終点へ直線移動します。つまり2点を結ぶ方向が実際の漬け込み方向です。既定値はRoblox Cylinderの長軸であるローカルX軸に合わせています。
+
 アニメーション未設定でも、棒が皮なしバナナへ移動する串刺し、チョコ筒上での漬け込み、工程展示のトッピング動作が再生されます。公開済みアニメーションのIDを
 [`Config.lua`](src/ReplicatedStorage/ChocolateBanana/Config.lua) に入れると再生されます。
 
@@ -74,7 +82,9 @@ Roblox Studio で使う、チョコバナナの作成・販売システムです
 | `SaveInStudio` | `false` | StudioテストでDataStoreを使うか |
 | `RotationSpeedDegrees` | `100` | スタッフの回転速度 |
 | `AnimationIds` | 空 | 刺す・漬ける・トッピングのアニメーションID |
-| `ActionVisuals.DipOrientationOffset` | X軸180度 | チョコ筒に入れるバナナの向き |
+| `ActionVisuals.DipPointName` | `ChocolateBananaDipPoint` | 漬け込み位置・向きを決めるAttachment名 |
+| `ActionVisuals.DipEndPointName` | `ChocolateBananaDipEndPoint` | 沈み切る位置を決めるAttachment名 |
+| `ActionVisuals.DipOrientationOffset` | Z軸180度 | DipPointがない既存屋台の互換用回転 |
 | `EffectOffsets.ToppingOrientationOffset` | 回転なし | 登録したエフェクトへの追加回転 |
 
 ## 操作
