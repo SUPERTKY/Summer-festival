@@ -2,7 +2,7 @@
 -- 「表示 > コマンドバー」へこのファイル全体を貼り付けて実行してください。
 --
 -- ServerStorage/ChocolateBananaEffects/ToppingParticle へ複製します。
--- ParticleEmitterがAttachment内にある場合、そのAttachmentの位置と向きも保存します。
+-- ParticleEmitterの位置と向きを、元モデルのルートPart基準で保存します。
 -- 既存エフェクトはToppingParticle_Backupとして残るため、元に戻せます。
 
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
@@ -43,18 +43,41 @@ local ok, result = xpcall(function()
 	clone.Name = "ToppingParticle"
 	clone.Enabled = false
 
-	local sourceAttachment = source.Parent
-	if sourceAttachment and sourceAttachment:IsA("Attachment") then
-		clone:SetAttribute("AttachmentCFrame", sourceAttachment.CFrame)
+	local sourceParent = source.Parent
+	local sourceWorldCFrame: CFrame? = nil
+	if sourceParent and sourceParent:IsA("Attachment") then
+		sourceWorldCFrame = sourceParent.WorldCFrame
+	elseif sourceParent and sourceParent:IsA("BasePart") then
+		sourceWorldCFrame = sourceParent.CFrame
+	end
+
+	if sourceWorldCFrame then
+		local sourceModel = source:FindFirstAncestorOfClass("Model")
+		local referencePart: BasePart? = nil
+		if sourceModel then
+			referencePart = sourceModel.PrimaryPart or sourceModel:FindFirstChildWhichIsA("BasePart", true)
+		end
+		if not referencePart then
+			referencePart = source:FindFirstAncestorWhichIsA("BasePart")
+		end
+
+		if referencePart then
+			clone:SetAttribute(
+				"AttachmentCFrame",
+				referencePart.CFrame:ToObjectSpace(sourceWorldCFrame)
+			)
+		elseif sourceParent:IsA("Attachment") then
+			clone:SetAttribute("AttachmentCFrame", sourceParent.CFrame)
+		end
 	end
 
 	clone.Parent = effects
 	Selection:Set({ clone })
 	print("登録完了: ChocolateBananaEffects/ToppingParticle")
 	if clone:GetAttribute("AttachmentCFrame") then
-		print("元のAttachment位置と向きも保存しました。")
+		print("元モデルのルートPartを基準に、エフェクト位置と向きを保存しました。")
 	else
-		print("位置はConfig.EffectOffsets.Toppingを使用します。")
+		print("位置と向きはConfig.EffectOffsetsを使用します。")
 	end
 	return true
 end, debug.traceback)
