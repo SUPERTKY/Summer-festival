@@ -66,11 +66,15 @@ local Config = {
 		-- チョコ筒の上面からどれだけ上で開始し、何スタッド沈めるかです。
 		DipAboveVat = 0.8,
 		DipDepth = 1.4,
+		-- バナナ側の上下が逆の場合は、X/Y/Zの180度を切り替えて調整します。
+		DipOrientationOffset = CFrame.Angles(math.rad(180), 0, 0),
 	},
 
 	EffectOffsets = {
-		-- 登録コマンドでAttachment位置を取得できなかった場合のトッピング位置です。
-		Topping = Vector3.new(0, -0.8, 0),
+		-- 登録コマンドで位置を取得できなかった場合のトッピング位置です。
+		Topping = CFrame.new(0, -0.8, 0),
+		-- ParticleEmitterの放出方向が逆の場合に回転させます。
+		ToppingOrientationOffset = CFrame.Angles(math.rad(180), 0, 0),
 	},
 
 	ChocolateColor = Color3.fromRGB(91, 50, 30),
