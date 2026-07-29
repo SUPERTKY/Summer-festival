@@ -69,7 +69,7 @@ local Config = {
 		DipAboveVat = 0.8,
 		DipDepth = 1.4,
 		-- DipPointがない既存屋台だけに使う互換用の回転です。
-		DipOrientationOffset = CFrame.Angles(math.rad(180), 0, 0),
+		DipOrientationOffset = CFrame.Angles(0, 0, math.rad(180)),
 	},
 
 	EffectOffsets = {
