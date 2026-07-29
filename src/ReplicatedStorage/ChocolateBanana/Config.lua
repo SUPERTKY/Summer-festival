@@ -73,8 +73,8 @@ local Config = {
 	EffectOffsets = {
 		-- 登録コマンドで位置を取得できなかった場合のトッピング位置です。
 		Topping = CFrame.new(0, -0.8, 0),
-		-- ParticleEmitterの放出方向が逆の場合に回転させます。
-		ToppingOrientationOffset = CFrame.Angles(math.rad(180), 0, 0),
+		-- 再登録後も放出方向が逆の場合だけ、X/Y/Zの180度を設定します。
+		ToppingOrientationOffset = CFrame.identity,
 	},
 
 	ChocolateColor = Color3.fromRGB(91, 50, 30),
