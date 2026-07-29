@@ -313,12 +313,13 @@ function ChocolateBananaService:_startDipVisual(state: StaffState, vat: BasePart
 	self:_clearCurrentDisplay(state.stallId)
 	self:_clearActionVisuals(state.stallId)
 
-	local displayPoint = self:_findTaggedPart(self._config.Tags.CurrentStepDisplayPoint, state.stallId)
-	local rotation = if displayPoint then displayPoint.CFrame.Rotation else vat.CFrame.Rotation
 	local topPosition = vat.Position
 		+ vat.CFrame.UpVector * (vat.Size.Y / 2 + self._config.ActionVisuals.DipAboveVat)
-	local start = CFrame.new(topPosition) * rotation
-	local dipped = start * CFrame.new(0, -self._config.ActionVisuals.DipDepth, 0)
+	local start = CFrame.new(topPosition)
+		* vat.CFrame.Rotation
+		* self._config.ActionVisuals.DipOrientationOffset
+	-- バナナのローカル下方向ではなく、チョコ筒の下方向へ沈めます。
+	local dipped = start - vat.CFrame.UpVector * self._config.ActionVisuals.DipDepth
 
 	local banana = self._assets:Place("SkeweredBanana", start, workspace)
 	if not banana then
@@ -589,11 +590,10 @@ function ChocolateBananaService:_addToppingEffect(state: StaffState)
 	local attachment = Instance.new("Attachment")
 	attachment.Name = "ChocolateBananaToppingEffect"
 	local savedCFrame = if template then template:GetAttribute("AttachmentCFrame") else nil
-	if typeof(savedCFrame) == "CFrame" then
-		attachment.CFrame = savedCFrame
-	else
-		attachment.Position = self._config.EffectOffsets.Topping
-	end
+	local baseCFrame = if typeof(savedCFrame) == "CFrame"
+		then savedCFrame
+		else self._config.EffectOffsets.Topping
+	attachment.CFrame = baseCFrame * self._config.EffectOffsets.ToppingOrientationOffset
 	attachment.Parent = root
 
 	local emitter: ParticleEmitter

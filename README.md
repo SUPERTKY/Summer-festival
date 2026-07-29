@@ -58,7 +58,7 @@ Roblox Studio で使う、チョコバナナの作成・販売システムです
 2. [`studio/REGISTER_TOPPING_EFFECT.command.lua`](studio/REGISTER_TOPPING_EFFECT.command.lua) 全体をコマンドバーで実行します。
 3. `ServerStorage/ChocolateBananaEffects/ToppingParticle` に複製されます。
 
-元のParticleEmitterがAttachment内にある場合は、Attachmentの位置と向きも保存されます。Attachment以外にある場合は `Config.EffectOffsets.Topping` で再生位置を調整します。
+元のParticleEmitterがAttachment内にある場合は、元モデルのルートPartを基準に位置と向きを保存します。以前のコマンドで登録したEmitterは、更新後のコマンドでもう一度登録してください。位置と追加回転は `Config.EffectOffsets` で調整できます。
 
 アニメーション未設定でも、棒が皮なしバナナへ移動する串刺し、チョコ筒上での漬け込み、工程展示のトッピング動作が再生されます。公開済みアニメーションのIDを
 [`Config.lua`](src/ReplicatedStorage/ChocolateBanana/Config.lua) に入れると再生されます。
@@ -74,6 +74,8 @@ Roblox Studio で使う、チョコバナナの作成・販売システムです
 | `SaveInStudio` | `false` | StudioテストでDataStoreを使うか |
 | `RotationSpeedDegrees` | `100` | スタッフの回転速度 |
 | `AnimationIds` | 空 | 刺す・漬ける・トッピングのアニメーションID |
+| `ActionVisuals.DipOrientationOffset` | X軸180度 | チョコ筒に入れるバナナの向き |
+| `EffectOffsets.ToppingOrientationOffset` | 回転なし | 登録したエフェクトへの追加回転 |
 
 ## 操作
 
