@@ -313,11 +313,18 @@ function ChocolateBananaService:_startDipVisual(state: StaffState, vat: BasePart
 	self:_clearCurrentDisplay(state.stallId)
 	self:_clearActionVisuals(state.stallId)
 
-	local topPosition = vat.Position
-		+ vat.CFrame.UpVector * (vat.Size.Y / 2 + self._config.ActionVisuals.DipAboveVat)
-	local start = CFrame.new(topPosition)
-		* vat.CFrame.Rotation
-		* self._config.ActionVisuals.DipOrientationOffset
+	local dipPoint = vat:FindFirstChild(self._config.ActionVisuals.DipPointName, true)
+	local start: CFrame
+	if dipPoint and dipPoint:IsA("Attachment") then
+		-- Studioで設定したDipPointの位置・回転を一切変えず、そのまま使用します。
+		start = dipPoint.WorldCFrame
+	else
+		local topPosition = vat.Position
+			+ vat.CFrame.UpVector * (vat.Size.Y / 2 + self._config.ActionVisuals.DipAboveVat)
+		start = CFrame.new(topPosition)
+			* vat.CFrame.Rotation
+			* self._config.ActionVisuals.DipOrientationOffset
+	end
 	-- バナナのローカル下方向ではなく、チョコ筒の下方向へ沈めます。
 	local dipped = start - vat.CFrame.UpVector * self._config.ActionVisuals.DipDepth
 
