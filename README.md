@@ -60,6 +60,10 @@ Roblox Studio で使う、チョコバナナの作成・販売システムです
 
 元のParticleEmitterがAttachment内にある場合は、元モデルのルートPartを基準に位置と向きを保存します。以前のコマンドで登録したEmitterは、更新後のコマンドでもう一度登録してください。位置と追加回転は `Config.EffectOffsets` で調整できます。
 
+エフェクトの位置をStudio上で直接決める場合は、`CurrentStepDisplayPoint` を選択して
+[`studio/CREATE_TOPPING_EFFECT_POINT.command.lua`](studio/CREATE_TOPPING_EFFECT_POINT.command.lua)
+を実行します。作成された `ChocolateBananaToppingEffectPoint` を移動・回転すると、その位置と向きがゲーム内でそのまま使われます。
+
 ### チョコ漬けの位置・向きを設定
 
 1. Studioでタグを付けたチョコ筒のBasePartを1つ選択します。
@@ -85,6 +89,7 @@ Roblox Studio で使う、チョコバナナの作成・販売システムです
 | `ActionVisuals.DipPointName` | `ChocolateBananaDipPoint` | 漬け込み位置・向きを決めるAttachment名 |
 | `ActionVisuals.DipEndPointName` | `ChocolateBananaDipEndPoint` | 沈み切る位置を決めるAttachment名 |
 | `ActionVisuals.DipOrientationOffset` | Z軸180度 | DipPointがない既存屋台の互換用回転 |
+| `EffectOffsets.ToppingPointName` | `ChocolateBananaToppingEffectPoint` | 工程表示上の正確なエフェクト発生点 |
 | `EffectOffsets.ToppingOrientationOffset` | 回転なし | 登録したエフェクトへの追加回転 |
 
 ## 操作

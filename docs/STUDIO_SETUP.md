@@ -81,6 +81,11 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 - `Rate = 0` のEmitter：トッピング開始時に30個を一度だけ放出
 - `Rate > 0` のEmitter：3秒間有効化
 
+エフェクトの位置・向きを正確に調整する場合は、タグを付けた `CurrentStepDisplayPoint` を1つ選択し、
+[`CREATE_TOPPING_EFFECT_POINT.command.lua`](../studio/CREATE_TOPPING_EFFECT_POINT.command.lua)
+をコマンドバーで実行します。作成された `ChocolateBananaToppingEffectPoint` Attachmentを
+Studioの移動・回転ツールで調整してください。このAttachmentがある場合、登録時の位置情報やConfigの位置より優先されます。
+
 ## 6. チョコ漬けの位置・向き
 
 タグを付けたチョコ筒のBasePartを1つ選択し、

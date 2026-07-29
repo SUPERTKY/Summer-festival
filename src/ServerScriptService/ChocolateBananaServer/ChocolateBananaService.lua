@@ -607,14 +607,26 @@ function ChocolateBananaService:_addToppingEffect(state: StaffState)
 	local effects = ServerStorage:FindFirstChild("ChocolateBananaEffects")
 	local template = if effects then effects:FindFirstChild("ToppingParticle") else nil
 
-	local attachment = Instance.new("Attachment")
-	attachment.Name = "ChocolateBananaToppingEffect"
-	local savedCFrame = if template then template:GetAttribute("AttachmentCFrame") else nil
-	local baseCFrame = if typeof(savedCFrame) == "CFrame"
-		then savedCFrame
-		else self._config.EffectOffsets.Topping
-	attachment.CFrame = baseCFrame * self._config.EffectOffsets.ToppingOrientationOffset
-	attachment.Parent = root
+	local displayPoint = self:_findTaggedPart(self._config.Tags.CurrentStepDisplayPoint, state.stallId)
+	local configuredPoint = if displayPoint
+		then displayPoint:FindFirstChild(self._config.EffectOffsets.ToppingPointName, true)
+		else nil
+	local attachment: Attachment
+	local ownsAttachment = false
+	if configuredPoint and configuredPoint:IsA("Attachment") then
+		-- Studioに置いたEffectPointを直接使い、位置・向きの変換を行いません。
+		attachment = configuredPoint
+	else
+		attachment = Instance.new("Attachment")
+		attachment.Name = "ChocolateBananaToppingEffect"
+		local savedCFrame = if template then template:GetAttribute("AttachmentCFrame") else nil
+		local baseCFrame = if typeof(savedCFrame) == "CFrame"
+			then savedCFrame
+			else self._config.EffectOffsets.Topping
+		attachment.CFrame = baseCFrame * self._config.EffectOffsets.ToppingOrientationOffset
+		attachment.Parent = root
+		ownsAttachment = true
+	end
 
 	local emitter: ParticleEmitter
 	if template and template:IsA("ParticleEmitter") then
@@ -647,7 +659,11 @@ function ChocolateBananaService:_addToppingEffect(state: StaffState)
 			emitter.Enabled = false
 		end
 	end)
-	Debris:AddItem(attachment, 4)
+	if ownsAttachment then
+		Debris:AddItem(attachment, 4)
+	else
+		Debris:AddItem(emitter, 4)
+	end
 end
 
 function ChocolateBananaService:_takeBanana(player: Player, stallId: string)

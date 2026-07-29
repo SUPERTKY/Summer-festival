@@ -42,6 +42,8 @@ Studio の **Test → Start** でサーバー1台・プレイヤー2〜3人を�
 - [ ] 漬け終わると回転できるようになる
 - [ ] 登録コマンドで独自 `ParticleEmitter` が `ChocolateBananaEffects/ToppingParticle` へ複製される
 - [ ] トッピング開始1秒後に登録した独自ParticleEmitterが工程展示から再生される
+- [ ] `ChocolateBananaToppingEffectPoint` がある場合、そのWorldPositionと発生位置が一致する
+- [ ] EffectPointを移動・回転すると、コード変更なしでエフェクト位置・向きも変わる
 - [ ] 更新後の登録コマンドで再登録すると、元モデルを基準にした位置と向きが再生時にも使われる
 - [ ] `ToppingOrientationOffset` を変えるとエフェクトだけを追加回転できる
 - [ ] トッピング中に工程展示が小刻みに動く
