@@ -74,10 +74,15 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 
 登録先は `ServerStorage/ChocolateBananaEffects/ToppingParticle` です。既存の登録物はバックアップ名で残ります。
 
-- ParticleEmitterがAttachment内にある場合：元Attachmentの `CFrame` を自動保存
+- ParticleEmitterがAttachment内にある場合：元モデルのルートPart基準の位置・向きを自動保存
+- 古い登録コマンドを実行済みの場合：更新後のコマンドで同じEmitterを再登録
+- 自動保存後も向きが逆の場合：`Config.EffectOffsets.ToppingOrientationOffset` にX/Y/Zいずれかの180度回転を設定
 - Attachment以外にある場合：`Config.EffectOffsets.Topping` を使用
 - `Rate = 0` のEmitter：トッピング開始時に30個を一度だけ放出
 - `Rate > 0` のEmitter：3秒間有効化
+
+チョコ漬けは常に `ChocolateVat` の上方向から下方向へ移動します。バナナ自体の上下は
+`Config.ActionVisuals.DipOrientationOffset` で調整します。
 
 ## 6. アニメーション
 
