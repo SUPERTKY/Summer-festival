@@ -33,10 +33,11 @@ Studio の **Test → Start** でサーバー1台・プレイヤー2〜3人を�
 - [ ] 棒が差し切られた後、一時モデルが消えて工程展示が `SkeweredBanana` へ変わる
 - [ ] 独自アニメーションIDが空でも工程展示の手続き型モーションが見える
 - [ ] チョコ筒を選ぶと工程展示の `SkeweredBanana` がいったん消える
-- [ ] チョコ筒内の `ChocolateBananaDipPoint` と一時バナナの開始位置・回転が一致する
-- [ ] DipPointをStudioで回転させると、コード変更なしで一時バナナも同じ向きに変わる
+- [ ] チョコ筒内の開始点 `ChocolateBananaDipPoint` と一時バナナの開始位置・回転が一致する
+- [ ] 一時バナナが終点 `ChocolateBananaDipEndPoint` へ向かって直線移動する
+- [ ] 終点をStudioで動かすと、コード変更なしで漬け込みの移動方向も変わる
 - [ ] チョコ筒の上に串付きバナナが現れ、バナナ側を下にして筒へ沈んでから上へ戻る
-- [ ] チョコ筒を回転させても、筒の上方向から下方向へまっすぐ沈む
+- [ ] 2点がない場合も、CylinderのローカルX軸に沿って筒口から内部へ沈む
 - [ ] 漬け込み終了後、一時モデルが消えて工程展示が `DippedBanana` へ変わる
 - [ ] 漬け終わると回転できるようになる
 - [ ] 登録コマンドで独自 `ParticleEmitter` が `ChocolateBananaEffects/ToppingParticle` へ複製される
