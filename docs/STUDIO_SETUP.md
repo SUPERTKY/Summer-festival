@@ -87,11 +87,12 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 [`CREATE_DIP_POINT.command.lua`](../studio/CREATE_DIP_POINT.command.lua)
 をコマンドバーで実行します。
 
-チョコ筒内に `ChocolateBananaDipPoint` Attachmentが作成され、自動的に選択されます。
-Studioの移動・回転ツールで調整したCFrameが、漬け込み開始時の `SkeweredBanana` にそのまま使われます。
-下降方向だけはチョコ筒の上方向から下方向へ固定されます。
+チョコ筒内に開始点 `ChocolateBananaDipPoint` と終点 `ChocolateBananaDipEndPoint` が作成されます。
+開始点のCFrameが `SkeweredBanana` の開始位置・向きになり、終点の位置まで直線移動します。
+2点を結ぶ方向がそのまま移動方向になるため、筒口からチョコ内部へ向くように終点を置いてください。
 
-DipPointがない既存屋台では `Config.ActionVisuals.DipOrientationOffset` が互換用として使われます。
+2点がない既存屋台では、Roblox Cylinderの長軸であるローカルX軸を使います。
+開始時の回転だけは `Config.ActionVisuals.DipOrientationOffset` が互換用として使われます。
 
 ## 7. アニメーション
 
