@@ -4,6 +4,8 @@ local CollectionService = game:GetService("CollectionService")
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerStorage = game:GetService("ServerStorage")
+local TweenService = game:GetService("TweenService")
 
 local ChocolateBananaService = {}
 ChocolateBananaService.__index = ChocolateBananaService
@@ -12,6 +14,7 @@ type StaffState = {
 	stallId: string,
 	step: string,
 	busy: boolean,
+	displayHidden: boolean,
 	lockObjects: { Instance },
 	originalMovement: {
 		walkSpeed: number,
@@ -46,6 +49,7 @@ type ChocolateBananaService = typeof(setmetatable(
 		_pendingJoin: { [Player]: { stallId: string, expiresAt: number } },
 		_displayByStall: { [string]: DisplayState },
 		_currentDisplayByStall: { [string]: Instance },
+		_actionVisualsByStall: { [string]: { Instance } },
 		_touchTimes: { [Player]: number },
 		_bound: { [Instance]: boolean },
 	},
@@ -60,6 +64,24 @@ local function getRoot(instance: Instance): BasePart?
 		return instance.PrimaryPart or instance:FindFirstChildWhichIsA("BasePart", true)
 	end
 	return nil
+end
+
+local function getPivot(instance: Instance): CFrame?
+	if instance:IsA("Model") then
+		return instance:GetPivot()
+	end
+	if instance:IsA("BasePart") then
+		return instance.CFrame
+	end
+	return nil
+end
+
+local function setPivot(instance: Instance, target: CFrame)
+	if instance:IsA("Model") then
+		instance:PivotTo(target)
+	elseif instance:IsA("BasePart") then
+		instance.CFrame = target
+	end
 end
 
 local function getCharacterPlayer(hit: BasePart): Player?
@@ -118,6 +140,7 @@ function ChocolateBananaService.new(config: any, moneyService: any, assets: any)
 		_pendingJoin = {},
 		_displayByStall = {},
 		_currentDisplayByStall = {},
+		_actionVisualsByStall = {},
 		_touchTimes = {},
 		_bound = {},
 	}, ChocolateBananaService)
@@ -170,6 +193,11 @@ function ChocolateBananaService:_clearCurrentDisplay(stallId: string)
 end
 
 function ChocolateBananaService:_syncCurrentDisplay(state: StaffState)
+	if state.displayHidden then
+		self:_clearCurrentDisplay(state.stallId)
+		return
+	end
+
 	local assetName = STEP_DISPLAY_ASSET[state.step]
 	local existing = self._currentDisplayByStall[state.stallId]
 	if existing and existing.Parent and existing:GetAttribute("ChocolateBananaDisplayAsset") == assetName then
@@ -197,6 +225,121 @@ function ChocolateBananaService:_syncCurrentDisplay(state: StaffState)
 	item:SetAttribute("ChocolateBananaDisplayAsset", assetName)
 	item:SetAttribute("ChocolateBananaStallId", state.stallId)
 	self._currentDisplayByStall[state.stallId] = item
+end
+
+function ChocolateBananaService:_clearActionVisuals(stallId: string)
+	local visuals = self._actionVisualsByStall[stallId]
+	if visuals then
+		for _, visual in visuals do
+			if visual.Parent then
+				visual:Destroy()
+			end
+		end
+	end
+	self._actionVisualsByStall[stallId] = nil
+end
+
+function ChocolateBananaService:_trackActionVisual(stallId: string, visual: Instance?)
+	if not visual then
+		return
+	end
+	local visuals = self._actionVisualsByStall[stallId]
+	if not visuals then
+		visuals = {}
+		self._actionVisualsByStall[stallId] = visuals
+	end
+	table.insert(visuals, visual)
+end
+
+function ChocolateBananaService:_tweenActionVisual(instance: Instance, target: CFrame, duration: number): Tween?
+	local start = getPivot(instance)
+	if not start or not instance.Parent then
+		return nil
+	end
+
+	local value = Instance.new("CFrameValue")
+	value.Value = start
+	local connection = value:GetPropertyChangedSignal("Value"):Connect(function()
+		if instance.Parent then
+			setPivot(instance, value.Value)
+		end
+	end)
+
+	local tween = TweenService:Create(
+		value,
+		TweenInfo.new(math.max(duration, 0.05), Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+		{ Value = target }
+	)
+	tween.Completed:Connect(function()
+		connection:Disconnect()
+		value:Destroy()
+	end)
+	tween:Play()
+	return tween
+end
+
+function ChocolateBananaService:_startSkewerVisual(state: StaffState, duration: number)
+	self:_clearCurrentDisplay(state.stallId)
+	self:_clearActionVisuals(state.stallId)
+
+	local displayPoint = self:_findTaggedPart(self._config.Tags.CurrentStepDisplayPoint, state.stallId)
+	if not displayPoint then
+		warn(`CurrentStepDisplayPoint was not found for skewer action at {state.stallId}`)
+		return
+	end
+
+	local bananaTarget = displayPoint.CFrame * self._config.CompositeOffsets.Banana
+	local stickTarget = displayPoint.CFrame * self._config.CompositeOffsets.Stick
+	local stickStart = stickTarget * self._config.ActionVisuals.SkewerStickStartOffset
+
+	local banana = self._assets:Place("PeeledBanana", bananaTarget, workspace)
+	local stick = self._assets:Place("Stick", stickStart, workspace)
+	if banana then
+		banana.Name = "CB_Action_PeeledBanana"
+		self:_trackActionVisual(state.stallId, banana)
+	end
+	if stick then
+		stick.Name = "CB_Action_Stick"
+		self:_trackActionVisual(state.stallId, stick)
+		task.delay(duration * 0.12, function()
+			if stick.Parent then
+				self:_tweenActionVisual(stick, stickTarget, duration * 0.72)
+			end
+		end)
+	end
+end
+
+function ChocolateBananaService:_startDipVisual(state: StaffState, vat: BasePart, duration: number)
+	self:_clearCurrentDisplay(state.stallId)
+	self:_clearActionVisuals(state.stallId)
+
+	local displayPoint = self:_findTaggedPart(self._config.Tags.CurrentStepDisplayPoint, state.stallId)
+	local rotation = if displayPoint then displayPoint.CFrame.Rotation else vat.CFrame.Rotation
+	local topPosition = vat.Position
+		+ vat.CFrame.UpVector * (vat.Size.Y / 2 + self._config.ActionVisuals.DipAboveVat)
+	local start = CFrame.new(topPosition) * rotation
+	local dipped = start * CFrame.new(0, -self._config.ActionVisuals.DipDepth, 0)
+
+	local banana = self._assets:Place("SkeweredBanana", start, workspace)
+	if not banana then
+		return
+	end
+	banana.Name = "CB_Action_DippingBanana"
+	self:_trackActionVisual(state.stallId, banana)
+
+	task.spawn(function()
+		local down = self:_tweenActionVisual(banana, dipped, duration * 0.38)
+		if down then
+			down.Completed:Wait()
+		end
+		if not banana.Parent then
+			return
+		end
+		task.wait(duration * 0.16)
+		if banana.Parent then
+			self:_tweenActionVisual(banana, start, duration * 0.38)
+		end
+	end)
 end
 
 function ChocolateBananaService:_lockAtStation(player: Player, stallId: string): boolean
@@ -266,6 +409,7 @@ function ChocolateBananaService:_join(player: Player, stallId: string)
 		stallId = stallId,
 		step = "Empty",
 		busy = false,
+		displayHidden = false,
 		lockObjects = {},
 		originalMovement = {
 			walkSpeed = humanoid.WalkSpeed,
@@ -310,6 +454,7 @@ function ChocolateBananaService:_resign(player: Player, sendMessage: boolean)
 	end
 
 	self:_clearCurrentDisplay(state.stallId)
+	self:_clearActionVisuals(state.stallId)
 	self._staffByStall[state.stallId] = nil
 	self._stateByPlayer[player] = nil
 	self._pendingJoin[player] = nil
@@ -391,6 +536,7 @@ function ChocolateBananaService:_startBusyAction(
 	duration: number,
 	animationId: string,
 	facePart: BasePart?,
+	visualAction: string?,
 	onComplete: (StaffState) -> ()
 )
 	local state = self._stateByPlayer[player]
@@ -399,8 +545,14 @@ function ChocolateBananaService:_startBusyAction(
 	end
 
 	state.busy = true
+	state.displayHidden = visualAction ~= nil
 	local stallId = state.stallId
 	local orientation = if facePart then self:_facePart(player, facePart) else nil
+	if visualAction == "Skewer" then
+		self:_startSkewerVisual(state, duration)
+	elseif visualAction == "Dip" and facePart then
+		self:_startDipVisual(state, facePart, duration)
+	end
 	self:_sendStatus(player)
 	self:_playAnimation(player, animationId, duration)
 
@@ -417,6 +569,8 @@ function ChocolateBananaService:_startBusyAction(
 			orientation:Destroy()
 		end
 		onComplete(current)
+		current.displayHidden = false
+		self:_clearActionVisuals(stallId)
 		current.busy = false
 		self:_sendStatus(player)
 	end)
@@ -429,30 +583,49 @@ function ChocolateBananaService:_addToppingEffect(state: StaffState)
 		return
 	end
 
+	local effects = ServerStorage:FindFirstChild("ChocolateBananaEffects")
+	local template = if effects then effects:FindFirstChild("ToppingParticle") else nil
+
 	local attachment = Instance.new("Attachment")
 	attachment.Name = "ChocolateBananaToppingEffect"
-	attachment.Position = Vector3.new(0, -0.8, 0)
+	local savedCFrame = if template then template:GetAttribute("AttachmentCFrame") else nil
+	if typeof(savedCFrame) == "CFrame" then
+		attachment.CFrame = savedCFrame
+	else
+		attachment.Position = self._config.EffectOffsets.Topping
+	end
 	attachment.Parent = root
 
-	local emitter = Instance.new("ParticleEmitter")
+	local emitter: ParticleEmitter
+	if template and template:IsA("ParticleEmitter") then
+		emitter = template:Clone()
+	else
+		emitter = Instance.new("ParticleEmitter")
+		emitter.Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 90, 90)),
+			ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 225, 80)),
+			ColorSequenceKeypoint.new(0.66, Color3.fromRGB(115, 210, 255)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
+		})
+		emitter.Lifetime = NumberRange.new(0.6, 1)
+		emitter.Rate = 45
+		emitter.Speed = NumberRange.new(2, 4)
+		emitter.EmissionDirection = Enum.NormalId.Bottom
+		emitter.SpreadAngle = Vector2.new(20, 20)
+		emitter.Acceleration = Vector3.new(0, -10, 0)
+	end
+
 	emitter.Name = "ToppingParticles"
-	emitter.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 90, 90)),
-		ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 225, 80)),
-		ColorSequenceKeypoint.new(0.66, Color3.fromRGB(115, 210, 255)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
-	})
-	emitter.Lifetime = NumberRange.new(0.6, 1)
-	emitter.Rate = 45
-	emitter.Speed = NumberRange.new(2, 4)
-	emitter.EmissionDirection = Enum.NormalId.Bottom
-	emitter.SpreadAngle = Vector2.new(20, 20)
-	emitter.Acceleration = Vector3.new(0, -10, 0)
 	emitter.Enabled = true
 	emitter.Parent = attachment
+	if emitter.Rate <= 0 then
+		emitter:Emit(30)
+	end
 
 	task.delay(3, function()
-		emitter.Enabled = false
+		if emitter.Parent then
+			emitter.Enabled = false
+		end
 	end)
 	Debris:AddItem(attachment, 4)
 end
@@ -492,6 +665,7 @@ function ChocolateBananaService:_skewer(player: Player)
 		self._config.ActionDurations.Skewer,
 		self._config.AnimationIds.Skewer,
 		nil,
+		"Skewer",
 		function(state)
 			state.step = "Skewered"
 		end
@@ -510,6 +684,7 @@ function ChocolateBananaService:_dip(player: Player, stallId: string, vat: BaseP
 		self._config.ActionDurations.Dip,
 		self._config.AnimationIds.Dip,
 		vat,
+		"Dip",
 		function(current)
 			current.step = "Dipped"
 		end
@@ -535,6 +710,7 @@ function ChocolateBananaService:_top(player: Player, stallId: string, container:
 		self._config.ActionDurations.Topping,
 		self._config.AnimationIds.Topping,
 		container,
+		nil,
 		function(current)
 			current.step = "Finished"
 		end
