@@ -75,6 +75,8 @@ local Config = {
 	},
 
 	EffectOffsets = {
+		-- CurrentStepDisplayPoint内にこのAttachmentがあれば、位置・向きをそのまま使います。
+		ToppingPointName = "ChocolateBananaToppingEffectPoint",
 		-- 登録コマンドで位置を取得できなかった場合のトッピング位置です。
 		Topping = CFrame.new(0, -0.8, 0),
 		-- 再登録後も放出方向が逆の場合だけ、X/Y/Zの180度を設定します。
