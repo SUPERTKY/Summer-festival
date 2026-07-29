@@ -83,7 +83,7 @@ Roblox Studio で使う、チョコバナナの作成・販売システムです
 | `RotationSpeedDegrees` | `100` | スタッフの回転速度 |
 | `AnimationIds` | 空 | 刺す・漬ける・トッピングのアニメーションID |
 | `ActionVisuals.DipPointName` | `ChocolateBananaDipPoint` | 漬け込み位置・向きを決めるAttachment名 |
-| `ActionVisuals.DipOrientationOffset` | X軸180度 | DipPointがない既存屋台の互換用回転 |
+| `ActionVisuals.DipOrientationOffset` | Z軸180度 | DipPointがない既存屋台の互換用回転 |
 | `EffectOffsets.ToppingOrientationOffset` | 回転なし | 登録したエフェクトへの追加回転 |
 
 ## 操作
