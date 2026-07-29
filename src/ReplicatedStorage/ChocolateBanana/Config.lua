@@ -65,6 +65,8 @@ local Config = {
 		SkewerStickStartOffset = CFrame.new(0, -1.2, 0),
 		-- ChocolateVat内にこの名前のAttachmentがあれば、その位置と向きを正解として使います。
 		DipPointName = "ChocolateBananaDipPoint",
+		-- このAttachmentの位置を漬け込みの終点として使います。
+		DipEndPointName = "ChocolateBananaDipEndPoint",
 		-- チョコ筒の上面からどれだけ上で開始し、何スタッド沈めるかです。
 		DipAboveVat = 0.8,
 		DipDepth = 1.4,
