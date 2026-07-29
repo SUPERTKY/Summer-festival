@@ -15,6 +15,7 @@ type AssetFactory = typeof(setmetatable(
 
 local PLACEHOLDER_COLORS = {
 	Banana = Color3.fromRGB(255, 221, 48),
+	PeeledBanana = Color3.fromRGB(255, 239, 150),
 	Stick = Color3.fromRGB(139, 90, 43),
 	SkeweredBanana = Color3.fromRGB(255, 221, 48),
 	DippedBanana = Color3.fromRGB(91, 50, 30),
@@ -128,7 +129,9 @@ function AssetFactory:_placeholder(name: string): Model
 end
 
 function AssetFactory:_composite(name: string): Model?
-	local bananaTemplate = self._assetFolder:FindFirstChild("Banana")
+	-- 登録済みの後工程アセットが無い場合だけ、皮なしバナナと棒から代替品を合成します。
+	local bananaTemplate = self._assetFolder:FindFirstChild("PeeledBanana")
+		or self._assetFolder:FindFirstChild("Banana")
 	local stickTemplate = self._assetFolder:FindFirstChild("Stick")
 	if not bananaTemplate or not stickTemplate then
 		return nil
@@ -187,6 +190,10 @@ end
 
 function AssetFactory:Clone(name: string): Instance
 	local template = self._assetFolder:FindFirstChild(name)
+	if not template and name == "PeeledBanana" then
+		-- 新アセット未登録の既存Studioでも調理を継続できる互換用フォールバックです。
+		template = self._assetFolder:FindFirstChild("Banana")
+	end
 	local composite = if not template
 			and (name == "SkeweredBanana" or name == "DippedBanana" or name == "FinishedBanana")
 		then self:_composite(name)

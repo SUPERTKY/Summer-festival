@@ -29,8 +29,8 @@ type DisplayState = {
 
 local STEP_DISPLAY_ASSET: { [string]: string } = {
 	Empty = "Banana",
-	Banana = "Banana",
-	Ingredients = "Banana",
+	Banana = "PeeledBanana",
+	Ingredients = "PeeledBanana",
 	Skewered = "SkeweredBanana",
 	Dipped = "DippedBanana",
 	Finished = "FinishedBanana",
@@ -501,7 +501,7 @@ function ChocolateBananaService:_takeBanana(player: Player, stallId: string)
 		return
 	end
 
-	if self:_attachItem(player, state, "LeftHand", "Banana") then
+	if self:_attachItem(player, state, "LeftHand", "PeeledBanana") then
 		state.step = "Banana"
 		self:_sendStatus(player)
 	end

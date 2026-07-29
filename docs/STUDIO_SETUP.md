@@ -40,9 +40,10 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 
 | 名前 | 用途 |
 |---|---|
-| `Banana` | 左手で持つバナナ |
+| `Banana` | 皮付きバナナ。材料の初期表示に使用 |
+| `PeeledBanana` | 皮なし・串なしバナナ。手持ち・串刺し前に使用 |
 | `Stick` | 右手で持つ棒 |
-| `SkeweredBanana` | 棒を刺した未コーティング状態（今回用意したメッシュ） |
+| `SkeweredBanana` | 串刺し済み・チョコ前の別メッシュ |
 | `DippedBanana` | チョコに漬けた状態 |
 | `FinishedBanana` | トッピング後・販売台の商品 |
 
@@ -50,9 +51,9 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 
 `FinishedBanana` はトッピング後の手持ち、販売台の商品、購入者へ渡すToolの3か所で共通利用されます。購入時は完成品メッシュのPrimaryPartがToolの `Handle` になります。ほかの商品モデルを省略した場合は動作確認用の仮モデルが使われます。
 
-名前で判定できないメッシュは、Explorerで「皮付きバナナ → 棒 → チョコ後 → 完成品」の順にCtrlを押しながら選択します。`SpecialMesh`を選択した場合は、その親Partが登録されます。
+名前で判定できないメッシュは、Explorerで「皮付きバナナ → 皮なし・串なしバナナ → 棒 → 串刺し済み・チョコ前 → チョコ後 → 完成品」の順にCtrlを押しながら6つを選択します。`SpecialMesh`を選択した場合は、その親Partが登録されます。
 
-`SkeweredBanana` を省略した場合は、登録した `Banana` と `Stick` から自動合成されます。`DippedBanana` と `FinishedBanana` は登録された実物メッシュが自動合成より優先されます。
+串刺し後は登録した `SkeweredBanana` をそのまま使用します。`SkeweredBanana` を省略した場合だけ、`PeeledBanana` と `Stick` から代替品を自動合成します。`PeeledBanana` が未登録の古い場所では `Banana` を代用します。個別に差し替える場合は [`REGISTER_PEELED_BANANA.command.lua`](../studio/REGISTER_PEELED_BANANA.command.lua) と [`REGISTER_SKEWERED_BANANA.command.lua`](../studio/REGISTER_SKEWERED_BANANA.command.lua) を使えます。`DippedBanana` と `FinishedBanana` は登録された実物メッシュが自動合成より優先されます。
 
 `FinishedBananaTool` は任意です。省略した場合は、登録した `FinishedBanana` メッシュを使って購入者用Toolが自動生成されます。完成品Toolを個別に用意する場合は `Tool` 内に `Handle` というBasePartを置きます。
 
@@ -63,7 +64,7 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 - 展示板右側の販売用 `DisplayPoint`
 - `ServerStorage/ChocolateBananaAssets/SkeweredBanana` と `FinishedBanana`
 
-既存の `DisplayPoint` があれば販売位置を維持するように板を作ります。工程表示は `Banana → SkeweredBanana → DippedBanana → FinishedBanana` の順でサーバーから自動更新されます。板が無い場合はスクリプト先頭の `BOARD_OFFSET` を屋台の形に合わせて調整してください。メッシュを差し替えた場合、以前のアセットは `CommandBarBackups` に残ります。
+既存の `DisplayPoint` があれば販売位置を維持するように板を作ります。工程表示は `Banana → PeeledBanana → SkeweredBanana → DippedBanana → FinishedBanana` の順でサーバーから自動更新されます。板が無い場合はスクリプト先頭の `BOARD_OFFSET` を屋台の形に合わせて調整してください。メッシュを差し替えた場合、以前のアセットは `CommandBarBackups` に残ります。
 
 ## 5. アニメーション
 
