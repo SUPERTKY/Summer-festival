@@ -11,7 +11,8 @@ Roblox Studio で使う、チョコバナナの作成・販売システムです
 - 画面の辞任ボタン
 - 商品はキャラクターの手に持たせず、工程展示だけを更新
 - 刺す → チョコに漬ける → トッピング → 販売台へ置く工程
-- 調理中の工程展示モデルの手続き型モーション、進行バー、工程完了の光とメッセージ
+- 串刺し時の棒の移動、チョコ筒での漬け込み、トッピング時の工程展示モーション
+- 独自トッピングParticleEmitterの登録・再生、進行バー、工程完了の光とメッセージ
 - チョコ工程中は筒の方向へ一時的に固定
 - トッピング開始1秒後から、下向きの粒を3秒表示
 - 完成品を `DisplayPoint` の位置と回転で設置
@@ -51,7 +52,15 @@ Roblox Studio で使う、チョコバナナの作成・販売システムです
 
 皮なし・串なしバナナだけを後から登録・差し替える場合は、対象を1つ選択して [`studio/REGISTER_PEELED_BANANA.command.lua`](studio/REGISTER_PEELED_BANANA.command.lua) をコマンドバーで実行します。串刺し済み・チョコ前のバナナは [`studio/REGISTER_SKEWERED_BANANA.command.lua`](studio/REGISTER_SKEWERED_BANANA.command.lua) で個別に登録・差し替えできます。
 
-アニメーション未設定でも、串刺し・チョコ漬け・トッピングでは工程展示モデルの傾き・上下・振り動作が再生されます。公開済みアニメーションのIDを
+### 独自トッピングエフェクトを登録
+
+1. Studioでトッピング用の `ParticleEmitter` を1つ選択します。
+2. [`studio/REGISTER_TOPPING_EFFECT.command.lua`](studio/REGISTER_TOPPING_EFFECT.command.lua) 全体をコマンドバーで実行します。
+3. `ServerStorage/ChocolateBananaEffects/ToppingParticle` に複製されます。
+
+元のParticleEmitterがAttachment内にある場合は、Attachmentの位置と向きも保存されます。Attachment以外にある場合は `Config.EffectOffsets.Topping` で再生位置を調整します。
+
+アニメーション未設定でも、棒が皮なしバナナへ移動する串刺し、チョコ筒上での漬け込み、工程展示のトッピング動作が再生されます。公開済みアニメーションのIDを
 [`Config.lua`](src/ReplicatedStorage/ChocolateBanana/Config.lua) に入れると再生されます。
 
 ## 主な設定

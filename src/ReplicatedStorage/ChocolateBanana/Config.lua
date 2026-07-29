@@ -60,6 +60,19 @@ local Config = {
 		Stick = CFrame.new(0, -0.9, 0),
 	},
 
+	ActionVisuals = {
+		-- 棒はCompositeOffsets.Stickの位置へ向かって、この相対位置から移動します。
+		SkewerStickStartOffset = CFrame.new(0, -1.2, 0),
+		-- チョコ筒の上面からどれだけ上で開始し、何スタッド沈めるかです。
+		DipAboveVat = 0.8,
+		DipDepth = 1.4,
+	},
+
+	EffectOffsets = {
+		-- 登録コマンドでAttachment位置を取得できなかった場合のトッピング位置です。
+		Topping = Vector3.new(0, -0.8, 0),
+	},
+
 	ChocolateColor = Color3.fromRGB(91, 50, 30),
 }
 

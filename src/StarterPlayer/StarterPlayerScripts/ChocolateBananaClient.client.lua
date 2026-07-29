@@ -42,8 +42,8 @@ local ACTION_DURATION_BY_STEP = {
 }
 
 local DISPLAY_ASSET_BY_STEP = {
-	Ingredients = "PeeledBanana",
-	Skewered = "SkeweredBanana",
+	-- 串刺しとチョコ漬けはサーバー側の一時モデルが動きます。
+	-- クライアント側で動かすのはトッピング中の工程展示だけです。
 	Dipped = "DippedBanana",
 }
 
@@ -604,22 +604,7 @@ RunService:BindToRenderStep(
 			return
 		end
 
-		if feedback.step == "Ingredients" then
-			setInstancePivot(
-				display,
-				base
-					* CFrame.new(0, 0.05 * pulse, -0.12 * pulse)
-					* CFrame.Angles(0, 0, math.rad(-8) * pulse)
-			)
-		elseif feedback.step == "Skewered" then
-			local dipAmount = math.sin(progress * math.pi)
-			setInstancePivot(
-				display,
-				base
-					* CFrame.new(0, -0.35 * dipAmount, 0)
-					* CFrame.Angles(math.rad(6) * pulse, 0, 0)
-			)
-		elseif feedback.step == "Dipped" then
+		if feedback.step == "Dipped" then
 			local shake = math.sin(progress * math.pi * 10) * (1 - progress)
 			setInstancePivot(
 				display,
