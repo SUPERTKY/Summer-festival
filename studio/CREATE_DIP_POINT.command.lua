@@ -10,6 +10,7 @@ local Selection = game:GetService("Selection")
 
 local DIP_POINT_NAME = "ChocolateBananaDipPoint"
 local DEFAULT_ABOVE_VAT = 0.8
+local DEFAULT_ORIENTATION = CFrame.Angles(0, 0, math.rad(180))
 
 local selected = Selection:Get()
 assert(#selected == 1, `チョコ筒のBasePartを1個だけ選択してください。現在の選択数: {#selected}個。`)
