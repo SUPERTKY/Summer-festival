@@ -41,10 +41,10 @@ local ACTION_DURATION_BY_STEP = {
 	Dipped = Config.ActionDurations.Topping,
 }
 
-local ACTION_ANIMATION_BY_STEP = {
-	Ingredients = Config.AnimationIds.Skewer,
-	Skewered = Config.AnimationIds.Dip,
-	Dipped = Config.AnimationIds.Topping,
+local DISPLAY_ASSET_BY_STEP = {
+	Ingredients = "PeeledBanana",
+	Skewered = "SkeweredBanana",
+	Dipped = "DippedBanana",
 }
 
 local ACTION_COLOR_BY_STEP = {
@@ -89,6 +89,7 @@ local function makeButton(parent: Instance, text: string, size: UDim2, position:
 	local button = Instance.new("TextButton")
 	button.AutoButtonColor = true
 	button.BackgroundColor3 = color
+	button.BackgroundTransparency = 0.12
 	button.Size = size
 	button.Position = position
 	button.Font = Enum.Font.GothamBold
@@ -114,6 +115,7 @@ moneyFrame.AnchorPoint = Vector2.new(1, 0)
 moneyFrame.Position = UDim2.new(1, -18, 0, 16)
 moneyFrame.Size = UDim2.fromOffset(180, 52)
 moneyFrame.BackgroundColor3 = COLORS.cream
+moneyFrame.BackgroundTransparency = 0.14
 moneyFrame.Parent = gui
 corner(moneyFrame, 14)
 stroke(moneyFrame, COLORS.brown, 3)
@@ -127,6 +129,7 @@ staffFrame.AnchorPoint = Vector2.new(0.5, 1)
 staffFrame.Position = UDim2.new(0.5, 0, 1, -24)
 staffFrame.Size = UDim2.fromOffset(520, 154)
 staffFrame.BackgroundColor3 = COLORS.cream
+staffFrame.BackgroundTransparency = 0.14
 staffFrame.Visible = false
 staffFrame.Parent = gui
 corner(staffFrame, 16)
@@ -153,6 +156,7 @@ progressTrack.Name = "ActionProgressTrack"
 progressTrack.Position = UDim2.fromOffset(14, 86)
 progressTrack.Size = UDim2.new(1, -28, 0, 7)
 progressTrack.BackgroundColor3 = Color3.fromRGB(218, 198, 166)
+progressTrack.BackgroundTransparency = 0.18
 progressTrack.BorderSizePixel = 0
 progressTrack.Visible = false
 progressTrack.Parent = staffFrame
@@ -162,6 +166,7 @@ local progressFill = Instance.new("Frame")
 progressFill.Name = "Fill"
 progressFill.Size = UDim2.fromScale(0, 1)
 progressFill.BackgroundColor3 = COLORS.green
+progressFill.BackgroundTransparency = 0.08
 progressFill.BorderSizePixel = 0
 progressFill.Parent = progressTrack
 corner(progressFill, 4)
@@ -189,6 +194,7 @@ modal.AnchorPoint = Vector2.new(0.5, 0.5)
 modal.Position = UDim2.fromScale(0.5, 0.5)
 modal.Size = UDim2.fromOffset(430, 230)
 modal.BackgroundColor3 = COLORS.cream
+modal.BackgroundTransparency = 0.12
 modal.ZIndex = 11
 modal.Parent = modalShade
 corner(modal, 18)
@@ -218,7 +224,7 @@ toast.AnchorPoint = Vector2.new(0.5, 0)
 toast.Position = UDim2.new(0.5, 0, 0, 82)
 toast.Size = UDim2.fromOffset(460, 54)
 toast.BackgroundColor3 = COLORS.dark
-toast.BackgroundTransparency = 0.08
+toast.BackgroundTransparency = 0.16
 toast.Font = Enum.Font.GothamBold
 toast.TextColor3 = Color3.new(1, 1, 1)
 toast.TextScaled = true
@@ -243,12 +249,12 @@ type ProceduralFeedbackState = {
 	step: string,
 	startedAt: number,
 	duration: number,
-	useProceduralPose: boolean,
 }
 
 local activeFeedback: ProceduralFeedbackState? = nil
-local feedbackLeftShoulder: Motor6D? = nil
-local feedbackRightShoulder: Motor6D? = nil
+local currentStallId: string? = nil
+local feedbackDisplay: Instance? = nil
+local feedbackDisplayBase: CFrame? = nil
 local feedbackVersion = 0
 
 local CAMERA_BIND_NAME = "ChocolateBananaFirstPersonCamera"
@@ -276,28 +282,61 @@ local function showToast(message: string)
 end
 
 
-local function findShoulder(character: Model, side: string): Motor6D?
-	local wanted = string.lower(side .. "Shoulder")
-	for _, descendant in character:GetDescendants() do
-		if descendant:IsA("Motor6D") then
-			local compactName = string.gsub(string.lower(descendant.Name), " ", "")
-			if compactName == wanted then
-				return descendant
-			end
+local function getInstancePivot(instance: Instance): CFrame?
+	if instance:IsA("Model") then
+		return instance:GetPivot()
+	end
+	if instance:IsA("BasePart") then
+		return instance.CFrame
+	end
+	return nil
+end
+
+local function setInstancePivot(instance: Instance, target: CFrame)
+	if instance:IsA("Model") then
+		instance:PivotTo(target)
+	elseif instance:IsA("BasePart") then
+		instance.CFrame = target
+	end
+end
+
+local function findStepDisplay(assetName: string): Instance?
+	local stallId = currentStallId
+	if not stallId then
+		return nil
+	end
+	for _, instance in workspace:GetDescendants() do
+		if
+			instance:GetAttribute("ChocolateBananaStallId") == stallId
+			and instance:GetAttribute("ChocolateBananaDisplayAsset") == assetName
+		then
+			return instance
 		end
 	end
 	return nil
 end
 
-local function resetProceduralPose()
-	if feedbackLeftShoulder and feedbackLeftShoulder.Parent then
-		feedbackLeftShoulder.Transform = CFrame.new()
+local function restoreFeedbackDisplay()
+	local display = feedbackDisplay
+	local base = feedbackDisplayBase
+	feedbackDisplay = nil
+	feedbackDisplayBase = nil
+	if display and display.Parent and base then
+		setInstancePivot(display, base)
 	end
-	if feedbackRightShoulder and feedbackRightShoulder.Parent then
-		feedbackRightShoulder.Transform = CFrame.new()
+end
+
+local function captureFeedbackDisplay(step: string)
+	if feedbackDisplay and feedbackDisplay.Parent and feedbackDisplayBase then
+		return
 	end
-	feedbackLeftShoulder = nil
-	feedbackRightShoulder = nil
+	local assetName = DISPLAY_ASSET_BY_STEP[step]
+	local display = if assetName then findStepDisplay(assetName) else nil
+	local base = if display then getInstancePivot(display) else nil
+	if display and base then
+		feedbackDisplay = display
+		feedbackDisplayBase = base
+	end
 end
 
 local function cancelProceduralFeedback()
@@ -305,34 +344,26 @@ local function cancelProceduralFeedback()
 	activeFeedback = nil
 	progressTrack.Visible = false
 	progressFill.Size = UDim2.fromScale(0, 1)
-	resetProceduralPose()
+	restoreFeedbackDisplay()
 end
 
 local function startProceduralFeedback(step: string)
 	feedbackVersion += 1
-	resetProceduralPose()
+	restoreFeedbackDisplay()
 
-	local character = player.Character
-	if character then
-		feedbackLeftShoulder = findShoulder(character, "left")
-		feedbackRightShoulder = findShoulder(character, "right")
-	end
-
-	local animationId = ACTION_ANIMATION_BY_STEP[step]
 	activeFeedback = {
 		step = step,
 		startedAt = os.clock(),
 		duration = math.max(ACTION_DURATION_BY_STEP[step] or 1, 0.05),
-		useProceduralPose = animationId == nil or animationId == "",
 	}
+	captureFeedbackDisplay(step)
 	progressFill.Size = UDim2.fromScale(0, 1)
 	progressFill.BackgroundColor3 = ACTION_COLOR_BY_STEP[step] or COLORS.green
 	progressTrack.Visible = true
 end
 
-local function getHeldRoot(assetName: string): BasePart?
-	local character = player.Character
-	local item = if character then character:FindFirstChild("CB_" .. assetName) else nil
+local function getStepDisplayRoot(assetName: string): BasePart?
+	local item = findStepDisplay(assetName)
 	if not item then
 		return nil
 	end
@@ -345,10 +376,10 @@ local function getHeldRoot(assetName: string): BasePart?
 	return nil
 end
 
-local function emitCompletionParticles(assetName: string, isFinal: boolean)
-	local root = getHeldRoot(assetName)
+local function emitCompletionParticles(assetName: string, isFinal: boolean): boolean
+	local root = getStepDisplayRoot(assetName)
 	if not root then
-		return
+		return false
 	end
 
 	local attachment = Instance.new("Attachment")
@@ -378,19 +409,27 @@ local function emitCompletionParticles(assetName: string, isFinal: boolean)
 	emitter.Parent = attachment
 	emitter:Emit(if isFinal then 26 else 12)
 	Debris:AddItem(attachment, 1)
+	return true
 end
 
 local function finishProceduralFeedback(completedStep: string)
 	feedbackVersion += 1
 	local version = feedbackVersion
 	activeFeedback = nil
-	resetProceduralPose()
+	restoreFeedbackDisplay()
 	progressFill.Size = UDim2.fromScale(1, 1)
 
 	local completionText = COMPLETE_TEXT_BY_STEP[completedStep]
 	if completionText then
 		showToast(completionText)
-		emitCompletionParticles(completedStep, completedStep == "Finished")
+		local emitted = emitCompletionParticles(completedStep, completedStep == "Finished")
+		if not emitted then
+			task.delay(0.15, function()
+				if feedbackVersion == version then
+					emitCompletionParticles(completedStep, completedStep == "Finished")
+				end
+			end)
+		end
 
 		staffScale.Scale = 1
 		local grow = TweenService:Create(
@@ -435,12 +474,12 @@ local function updatePanel()
 		then "調理中…"
 		elseif canSkewer then "バナナを刺す"
 		else "材料をそろえてください"
-	actionButton.BackgroundTransparency = if canSkewer then 0 else 0.45
+	actionButton.BackgroundTransparency = if canSkewer then 0.12 else 0.5
 
 	rotateLeft.Active = not isBusy
 	rotateRight.Active = not isBusy
-	rotateLeft.BackgroundTransparency = if isBusy then 0.45 else 0
-	rotateRight.BackgroundTransparency = if isBusy then 0.45 else 0
+	rotateLeft.BackgroundTransparency = if isBusy then 0.5 else 0.12
+	rotateRight.BackgroundTransparency = if isBusy then 0.5 else 0.12
 end
 
 local function hideFirstPersonObstructions(character: Model)
@@ -554,43 +593,40 @@ RunService:BindToRenderStep(
 			return
 		end
 
+		captureFeedbackDisplay(feedback.step)
 		local progress = math.clamp((os.clock() - feedback.startedAt) / feedback.duration, 0, 1)
-		local smooth = 0.5 - math.cos(progress * math.pi) * 0.5
 		local pulse = math.sin(progress * math.pi)
 		progressFill.Size = UDim2.fromScale(progress, 1)
 
-		if feedback.useProceduralPose then
-			local left = feedbackLeftShoulder
-			local right = feedbackRightShoulder
-			if feedback.step == "Ingredients" then
-				if left and left.Parent then
-					left.Transform = CFrame.Angles(math.rad(-18) * pulse, 0, math.rad(-7) * pulse)
-				end
-				if right and right.Parent then
-					right.Transform = CFrame.Angles(math.rad(-58) * smooth, 0, math.rad(12) * pulse)
-				end
-			elseif feedback.step == "Skewered" then
-				local dipAmount = math.sin(progress * math.pi)
-				if right and right.Parent then
-					right.Transform = CFrame.Angles(math.rad(-72) * dipAmount, 0, math.rad(5) * pulse)
-				end
-			elseif feedback.step == "Dipped" then
-				local shake = math.sin(progress * math.pi * 10) * (1 - progress)
-				if right and right.Parent then
-					right.Transform = CFrame.Angles(math.rad(-32) * pulse, 0, math.rad(12) * shake)
-				end
-			end
+		local display = feedbackDisplay
+		local base = feedbackDisplayBase
+		if not display or not display.Parent or not base then
+			return
 		end
 
-		local camera = workspace.CurrentCamera
-		if camera and cameraBound then
-			if feedback.step == "Ingredients" then
-				camera.CFrame *= CFrame.new(0, 0, -0.035 * pulse)
-			elseif feedback.step == "Skewered" then
-				camera.CFrame *= CFrame.new(0, -0.07 * math.sin(progress * math.pi), 0)
-			elseif feedback.step == "Dipped" then
-				camera.CFrame *= CFrame.Angles(0, 0, math.rad(0.35) * math.sin(progress * math.pi * 8))
-			end
+		if feedback.step == "Ingredients" then
+			setInstancePivot(
+				display,
+				base
+					* CFrame.new(0, 0.05 * pulse, -0.12 * pulse)
+					* CFrame.Angles(0, 0, math.rad(-8) * pulse)
+			)
+		elseif feedback.step == "Skewered" then
+			local dipAmount = math.sin(progress * math.pi)
+			setInstancePivot(
+				display,
+				base
+					* CFrame.new(0, -0.35 * dipAmount, 0)
+					* CFrame.Angles(math.rad(6) * pulse, 0, 0)
+			)
+		elseif feedback.step == "Dipped" then
+			local shake = math.sin(progress * math.pi * 10) * (1 - progress)
+			setInstancePivot(
+				display,
+				base
+					* CFrame.new(0, 0.04 * pulse, 0)
+					* CFrame.Angles(0, math.rad(8) * shake, 0)
+			)
 		end
 	end
 )
@@ -679,6 +715,7 @@ staffStatus.OnClientEvent:Connect(function(payload)
 	local wasStaff = isStaff
 	local wasBusy = isBusy
 	isStaff = payload.isStaff == true
+	currentStallId = if type(payload.stallId) == "string" then payload.stallId else nil
 	isBusy = payload.busy == true
 	currentStep = if type(payload.step) == "string" then payload.step else "None"
 	if isStaff ~= wasStaff then
