@@ -66,9 +66,22 @@ Studio のタグ編集画面から、部品へ次の CollectionService タグを
 
 既存の `DisplayPoint` があれば販売位置を維持するように板を作ります。工程表示は `Banana → PeeledBanana → SkeweredBanana → DippedBanana → FinishedBanana` の順でサーバーから自動更新されます。板が無い場合はスクリプト先頭の `BOARD_OFFSET` を屋台の形に合わせて調整してください。メッシュを差し替えた場合、以前のアセットは `CommandBarBackups` に残ります。
 
-## 5. アニメーション
+## 5. 独自トッピングエフェクト
 
-`Config.AnimationIds` が空でも、工程展示モデルの手続き型モーション、進行バー、完了エフェクトが動きます。独自のキャラクターアニメーションも加える場合は、所有グループまたはゲーム所有者として公開し、`Config.AnimationIds` に数値IDを設定します。商品自体は手に持たず、見た目の変化は工程展示で行います。
+トッピング用の `ParticleEmitter` を1つ選択し、
+[`REGISTER_TOPPING_EFFECT.command.lua`](../studio/REGISTER_TOPPING_EFFECT.command.lua)
+をコマンドバーで実行します。
+
+登録先は `ServerStorage/ChocolateBananaEffects/ToppingParticle` です。既存の登録物はバックアップ名で残ります。
+
+- ParticleEmitterがAttachment内にある場合：元Attachmentの `CFrame` を自動保存
+- Attachment以外にある場合：`Config.EffectOffsets.Topping` を使用
+- `Rate = 0` のEmitter：トッピング開始時に30個を一度だけ放出
+- `Rate > 0` のEmitter：3秒間有効化
+
+## 6. アニメーション
+
+`Config.AnimationIds` が空でも、棒を刺す一時モデル、チョコ筒で上下する一時モデル、進行バー、完了エフェクトが動きます。独自のキャラクターアニメーションも加える場合は、所有グループまたはゲーム所有者として公開し、`Config.AnimationIds` に数値IDを設定します。商品自体は手に持たず、見た目の変化は工程展示で行います。
 
 ```lua
 AnimationIds = {
@@ -80,13 +93,13 @@ AnimationIds = {
 
 | 名前 | 推奨長さ | タイミング |
 |---|---:|---|
-| `Skewer` | 約1.6秒 | 工程展示の皮なしバナナが傾き、串付きへ変化 |
-| `Dip` | 約2.5秒 | 工程展示の串付きバナナが上下 |
+| `Skewer` | 約1.6秒 | 皮なしバナナの前で棒が移動し、終了時に串付きへ交換 |
+| `Dip` | 約2.5秒 | 工程展示から消え、チョコ筒の上で沈んで戻る |
 | `Topping` | 約4.2秒 | 工程展示が小刻みに動き、1秒後から3秒間粒を表示 |
 
 工程時間を変える場合は `Config.ActionDurations` も合わせて変更します。
 
-## 6. 所持金保存
+## 7. 所持金保存
 
 公開ゲームではDataStoreへ自動保存されます。Studioでも保存を試す場合：
 
