@@ -129,7 +129,7 @@ function AssetFactory:_placeholder(name: string): Model
 end
 
 function AssetFactory:_composite(name: string): Model?
-	-- 串付き以降は皮なしバナナを使います。古い場所ではBananaへフォールバックします。
+	-- 登録済みの後工程アセットが無い場合だけ、皮なしバナナと棒から代替品を合成します。
 	local bananaTemplate = self._assetFolder:FindFirstChild("PeeledBanana")
 		or self._assetFolder:FindFirstChild("Banana")
 	local stickTemplate = self._assetFolder:FindFirstChild("Stick")
